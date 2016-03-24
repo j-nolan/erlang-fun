@@ -5,14 +5,21 @@
   * **Output**: the global headers as a list of key-values
   * **Output**: a binary representation of the `pcaps` packets
 
-- Split `pcap` packets
-  * **Input**: a binary representation of a `pcap` packet
-  * **Output**: A list of tuple (one for each packet). First element of each tuple contains the headers as a list of key-values of the packet, second contains the binary representation of the data of the packet
+- Split a list of `pcap` packets
+  * **Input**: a binary representation of a list of `pcap` packets
+  * **Output**: A list of tuples, one for each `pcap` packet. Each tuple contains a list of the packet's header as key-values, and the binary representation of the packet 
 
-- A method that reads an IP packet and returns:
-  * IP headers a a list of key-values
-  * The content as binary
+- Read an `IP` packet
+  * **Input**: a binary representation of a a `pcap` packet
+  * **Output**: IP headers a a list of key-values
+  * **Output**: a binary representation of the `IP` packet's content
 
-- A method that reads an ICMP packet and returns:
-  * ICMP headers as list of key-values
-   * The content as binary
+- Read an `ICMP` packet
+  * **Input**: a binary representation of a an `ICMP` packet
+  * **Output**: `ICMP` headers a a list of key-values
+  * **Output**: a binary representation of the `ICMP` packet's content
+
+## Ressources
+- [The `pcap` file format](https://wiki.wireshark.org/Development/LibpcapFileFormat)
+- [The `TCP/IP` protocol](http://www.networksorcery.com/enp/protocol/ip.htm)
+- [The `ICMP` protcol](http://www.networksorcery.com/enp/protocol/icmp.htm)
