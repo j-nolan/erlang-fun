@@ -1,0 +1,14 @@
+{application, drum-challenge,
+ [
+  {description, "An Erlang drum-challenge library"},
+  {vsn, "1"},
+  {modules, [
+             drum-challenge
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.

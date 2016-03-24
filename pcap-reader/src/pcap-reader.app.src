@@ -1,0 +1,14 @@
+{application, pcap-reader,
+ [
+  {description, "An Erlang pcap-reader library"},
+  {vsn, "1"},
+  {modules, [
+             pcap-reader
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
