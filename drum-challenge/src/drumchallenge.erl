@@ -17,18 +17,10 @@ read_splice_header(Bin) ->
   case Bin of
     <<"SPLICE", PayloadLength:64/integer, Version:32/binary, Tempo:32/little-float, Content/binary>> -> % :PayloadLength
 
-      % TODO: problem with string printing without terminating zeros (^@)
-      VersionUTF = binary_to_list(Version),
-      io:format("Saved with HW Version: ~s \n", [Version]),
-      io:format("Saved with HW Version: ~s \n", [VersionUTF]),
-      io:format("Saved with HW Version: ", []),
-      string_prettyprint_new(Version),
-      io:format("\nSaved with HW Version: ", []),
-      string_prettyprint(VersionUTF),
-
+      io:format("Saved with HW Version: ~s \n", [remove_trailing_zeros(binary_to_list(Version))]),
 
       % Print the tempo without the decimal part
-      io:format("\nTempo: ~s~n", [erlang:float_to_list(Tempo, [{decimals, 0}])]),
+      io:format("Tempo: ~s~n", [erlang:float_to_list(Tempo, [{decimals, 0}])]),
       read_splice_content(Content)
   end.
 
@@ -68,24 +60,12 @@ prettyprint_bit(Bin) ->
       prettyprint_bit(Rest)
   end.
 
-% Pretty print of string...
-% TODO: trials only, to FIX
+% return a list stripped from its trailing zeros
+remove_trailing_zeros(L) -> lists:reverse(remove_initial_zeros(lists:reverse(L))).
 
-string_prettyprint([]) -> ok;
-string_prettyprint([0 | _]) -> ok;
-string_prettyprint([H | T]) ->
-  io:format("~w,", [H]),
-  string_prettyprint(T).
-
-string_prettyprint_new(Bin) ->
-  case Bin of
-    <<_:0>> -> ok;
-    <<0, _/binary>> -> ok;
-    <<Any, Rest/binary>> ->
-      %A = unicode:characters_to_binary(Any),
-      %A = unicode:characters_to_list(Any, utf8),
-      io:format("~p,", [Any]),
-      string_prettyprint_new(Rest)
-  end.
+% return a list stripped from its initial zeros
+remove_initial_zeros([]) -> [];
+remove_initial_zeros([0|T]) -> remove_initial_zeros(T);
+remove_initial_zeros(L) -> L.
 
 %% End of Module.
