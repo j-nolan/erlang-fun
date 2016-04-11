@@ -1,9 +1,9 @@
-{application, pcap-reader,
+{application, pcapreader,
  [
   {description, "An Erlang pcap-reader library"},
   {vsn, "1"},
   {modules, [
-             pcap-reader
+             pcapreader
             ]},
   {registered, []},
   {applications, [
