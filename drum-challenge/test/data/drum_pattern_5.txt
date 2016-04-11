@@ -1,0 +1,4 @@
+Saved with HW Version: 0.708-alpha
+Tempo: 999
+(1) Kick    |x---|----|x---|----|
+(2) HiHat   |x-x-|x-x-|x-x-|x-x-|

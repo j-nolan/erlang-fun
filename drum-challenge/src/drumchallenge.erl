@@ -3,9 +3,14 @@
 %% drum-challenge: drum-challenge library's entry point.
 
 -export([
+  file_reader/0, % TODO: move to test
   read_splice_header/1
 ]).
 
+% TODO: read generic file, transform this to test with actual content.
+file_reader() ->
+  {ok, Binary} = file:read_file("../test/data/drum_pattern_1.splice"),
+  read_splice_header(Binary).
 
 %% API
 read_splice_header(Bin) ->
