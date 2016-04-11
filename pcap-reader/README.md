@@ -31,6 +31,9 @@ We chose to combine those approaches. The function `read_global_header` returns 
 ## Visibility of function
 Some functions are exported and others aren't. It depends on whether they make sense being used by the user of the API.
 
+## Checksum
+The `ICMP` and `IP` header checksums are not computed.
+
 ## Ressources
 - [The `pcap` file format](https://wiki.wireshark.org/Development/LibpcapFileFormat)
 - [The `TCP/IP` protocol](http://www.networksorcery.com/enp/protocol/ip.htm)
