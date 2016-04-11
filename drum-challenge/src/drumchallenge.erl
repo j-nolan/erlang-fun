@@ -1,4 +1,4 @@
--module(drum-challenge).
+-module(drumchallenge).
 
 %% drum-challenge: drum-challenge library's entry point.
 

@@ -1,9 +1,9 @@
-{application, drum-challenge,
+{application, drumchallenge,
  [
   {description, "An Erlang drum-challenge library"},
   {vsn, "1"},
   {modules, [
-             drum-challenge
+             drumchallenge
             ]},
   {registered, []},
   {applications, [
