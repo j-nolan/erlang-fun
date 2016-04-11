@@ -17,7 +17,7 @@ read_splice_header(Bin) ->
   case Bin of
     <<"SPLICE", PayloadLength:64/integer, Version:32/binary, Tempo:32/little-float, Content/binary>> -> % :PayloadLength
 
-      io:format("Saved with HW Version: ~s \n", [remove_trailing_zeros(binary_to_list(Version))]),
+      io:format("Saved with HW Version: ~s \n", [string_prettyprint_new(Version)]),
 
       % Print the tempo without the decimal part
       io:format("Tempo: ~s~n", [erlang:float_to_list(Tempo, [{decimals, 0}])]),
@@ -60,12 +60,13 @@ prettyprint_bit(Bin) ->
       prettyprint_bit(Rest)
   end.
 
-% return a list stripped from its trailing zeros
-remove_trailing_zeros(L) -> lists:reverse(remove_initial_zeros(lists:reverse(L))).
-
-% return a list stripped from its initial zeros
-remove_initial_zeros([]) -> [];
-remove_initial_zeros([0|T]) -> remove_initial_zeros(T);
-remove_initial_zeros(L) -> L.
+% Pretty print of string... 
+string_prettyprint_new(Bin) ->
+  case Bin of
+    <<_:0>> -> [];
+    <<0, _/binary>> -> [];
+    <<Any, Rest/binary>> ->
+      [Any | string_prettyprint_new(Rest)]
+  end.
 
 %% End of Module.
