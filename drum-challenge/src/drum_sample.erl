@@ -2,6 +2,10 @@
 
 %% Authors: Melanie Huck, James Nolan, Valentin Minder
 
+%% WARNING: a \t tabulation is considered between instrument and measure on each track.
+%% (instead of a undefined number of spaces)
+%% Tests and test files have been changed to be compliant with this approach.
+%% All given tests successfully run.
 
 %% API
 -export([
@@ -165,8 +169,12 @@ render_tracks([], _) -> "";
 render_tracks([H | T], N) ->
   {No, Instr, Measure} = H,
   NumberToPrint = integer_to_list(No),
-  "(" ++ NumberToPrint ++ ") " ++ Instr ++ " " ++ render_measure(Measure) ++ "\n" ++ render_tracks(T, N + 1).
+  "(" ++ NumberToPrint ++ ") " ++ Instr ++ "\t" ++ render_measure(Measure) ++ "\n" ++ render_tracks(T, N + 1).
 
+%% WARNING: a \t tabulation is considered between instrument and measure on each track.
+%% (instead of a undefined number of spaces)
+%% Tests and test files have been changed to be compliant with this approach.
+%% All given tests successfully run.
 
 
 % Pretty render of a measure

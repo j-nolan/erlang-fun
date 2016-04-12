@@ -1,6 +1,6 @@
 Saved with HW Version: 0.909
 Tempo: 240
-(0) SubKick       |----|----|----|----|
-(1) Kick          |x---|----|x---|----|
-(99) Maracas      |x-x-|x-x-|x-x-|x-x-|
-(255) Low Conga   |----|x---|----|x---|
+(0) SubKick	|----|----|----|----|
+(1) Kick	|x---|----|x---|----|
+(99) Maracas	|x-x-|x-x-|x-x-|x-x-|
+(255) Low Conga	|----|x---|----|x---|

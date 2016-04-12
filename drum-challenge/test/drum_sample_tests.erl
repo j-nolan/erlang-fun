@@ -118,7 +118,7 @@ render_test_() -> [
                 {0, "kick",
                     [[1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]]}
             ],
-            Expected = "(0) kick |x---|x---|x---|x---|\n",
+            Expected = "(0) kick\t|x---|x---|x---|x---|\n",
             ?assertEqual(Expected,
                 lists:flatten(drum_sample:render_tracks(Tracks, 0)))
         end},
@@ -140,12 +140,12 @@ render_test_() -> [
                     [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]]}
             ],
             Expected =
-                "(0) kick     |x---|x---|x---|x---|\n" ++
-                "(1) snare    |----|x---|----|x---|\n" ++
-                "(2) clap     |----|x-x-|----|----|\n" ++
-                "(3) hh-open  |--x-|--x-|x-x-|--x-|\n" ++
-                "(4) hh-close |x---|x---|----|x--x|\n" ++
-                "(5) cowbell  |----|----|--x-|----|\n",
+                "(0) kick\t|x---|x---|x---|x---|\n" ++
+                "(1) snare\t|----|x---|----|x---|\n" ++
+                "(2) clap\t|----|x-x-|----|----|\n" ++
+                "(3) hh-open\t|--x-|--x-|x-x-|--x-|\n" ++
+                "(4) hh-close\t|x---|x---|----|x--x|\n" ++
+                "(5) cowbell\t|----|----|--x-|----|\n",
             ?assertEqual(Expected,
                 lists:flatten(drum_sample:render_tracks(Tracks, 0)))
         end}
