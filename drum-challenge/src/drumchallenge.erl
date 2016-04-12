@@ -60,7 +60,7 @@ prettyprint_bit(Bin) ->
       prettyprint_bit(Rest)
   end.
 
-% Pretty print of string... 
+% Pretty print of string...
 string_prettyprint_new(Bin) ->
   case Bin of
     <<_:0>> -> [];
