@@ -216,13 +216,12 @@ pattern5_test() ->
     {ok, Actual} = drum_sample:render_file(data_dir("drum_pattern_5.splice")),
     ?assertEqual(binary_to_list(Expected), lists:flatten(Actual)).
 
-% TODO add negative tests!
+% Note: not sure it makes sense to add tests that fail...
 
 %% Helper functions.
 
-% return file from project's test/data directory
 data_dir(File) ->
-    % Note: problem with library location to locate tests file
+    % TODO: problem with library location to locate tests file
     {ok, Dir} = file:get_cwd(), % returns .../drum-challenge/.eunit
     Dir ++ "/../test/data/" ++ File.
     % this doesn't work...
