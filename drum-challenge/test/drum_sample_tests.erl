@@ -216,7 +216,11 @@ pattern5_test() ->
     {ok, Actual} = drum_sample:render_file(data_dir("drum_pattern_5.splice")),
     ?assertEqual(binary_to_list(Expected), lists:flatten(Actual)).
 
-% Note: not sure it makes sense to add tests that fail...
+
+misbeat_failing_test() ->
+    {ok, Expected} = file:read_file(data_dir("drum_pattern_5_corrupted.txt")),
+    {ok, Actual} = drum_sample:render_file(data_dir("drum_pattern_5.splice")),
+    ?assertNotEqual(binary_to_list(Expected), lists:flatten(Actual)).
 
 %% Helper functions.
 
