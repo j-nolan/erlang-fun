@@ -55,6 +55,10 @@ Total       : 43%
 
 The client just uses the API to print the data as it wishes, so we focused on testing the `reader` api, because it contains the core features of our program.
 
+
+## Conclusion
+We were surprised by how straight-forward it was to parse binary files with Erlang, compared to languages like Java.
+
 ## Ressources
 - [The `pcap` file format](https://wiki.wireshark.org/Development/LibpcapFileFormat)
 - [The `TCP/IP` protocol](http://www.networksorcery.com/enp/protocol/ip.htm)

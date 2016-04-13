@@ -9,6 +9,7 @@
 In this second exercise of lab 1, we will try to solve the drum challenge, originally written for Go developers. The challenge requires a good handling of binary files, which makes Erlang an interesting alternative language to solve the challenge.
 
 ## API methods
+Our code being heavily commented, we chose to reproduce our functions' documentation in the report.
 
 ### Public methods
 
@@ -97,6 +98,9 @@ Takes a Bin and returns the list represented, without trailing zeroes.
 
 #### remove_trailing_zeroes/1
 Takes a list, return the list limited up to the first 0 found, not included.
+
+## Conclusion
+Both exercises in this first lab showed how useful were Erlang's built-in mecanisms to decode binary files based on a specified protocole.
 
 ## Ressources
 - [A copy of the Drum challenge](https://bitbucket.org/marco_m/mcs/src/5f1b2141a57c01c429a0d10cd1873cab3ce98e0a/docs/drum_Go_Challenge.md?at=default&fileviewer=file-view-default)
