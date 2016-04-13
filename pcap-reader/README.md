@@ -55,9 +55,6 @@ Total       : 43%
 
 The client just uses the API to print the data as it wishes, so we focused on testing the `reader` api, because it contains the core features of our program.
 
-## Conclusion
-
-
 ## Ressources
 - [The `pcap` file format](https://wiki.wireshark.org/Development/LibpcapFileFormat)
 - [The `TCP/IP` protocol](http://www.networksorcery.com/enp/protocol/ip.htm)
