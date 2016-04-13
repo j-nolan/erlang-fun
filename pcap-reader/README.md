@@ -1,4 +1,14 @@
-# Pcap reader
+# MCS - Lab 1 - Pcap reader
+## Team members
+- Valentin Minder
+- Mélanie Huck
+- James Nolan
+
+## Introduction
+In this lab, we will build a command line tool that reads a pcap file and prints its data in a user friendly format. For this, we will use Erlang's unpacking capabilities.
+
+We will test our code using Rebar's eunit tool.
+
 ## API methods
 - Read `pcap` files
   * **Input**: a binary representation of a `pcap` file
