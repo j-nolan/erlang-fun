@@ -10,6 +10,7 @@ In this lab, we will build a command line tool that reads a pcap file and prints
 We will test our code using Rebar's eunit tool.
 
 ## API methods
+Before coding, we discussed on what our program should do. We agreed on the following specification:  
 - Read `pcap` files
   * **Input**: a binary representation of a `pcap` file
   * **Output**: the global header as a map of key-values
@@ -38,11 +39,24 @@ For example, we had two options to implement the IP datagram decoder:
 
 We chose to combine those approaches. The function `read_global_header` returns a binary representation of the encapsulated data. All other function return a decoded version of their payload.
 
-## Visibility of function
-Some functions are exported and others aren't. It depends on whether they make sense being used by the user of the API.
-
 ## Checksum
-The `ICMP` and `IP` header checksums are not computed.
+We do not compute the `ICMP` and `IP` header checksums, leaving this as a potential future feature.
+
+## Tests
+Our program pass all 13 tests. Our tests cover the following parts of our code:
+```
+Code Coverage:
+pcap_client :   0%
+pcapreader  :  87%
+reader      : 100%
+
+Total       : 43%
+```
+
+The client just uses the API to print the data as it wishes, so we focused on testing the `reader` api, because it contains the core features of our program.
+
+## Conclusion
+
 
 ## Ressources
 - [The `pcap` file format](https://wiki.wireshark.org/Development/LibpcapFileFormat)
