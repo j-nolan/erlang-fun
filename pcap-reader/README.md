@@ -43,7 +43,7 @@ We chose to combine those approaches. The function `read_global_header` returns 
 We do not compute the `ICMP` and `IP` header checksums, leaving this as a potential future feature.
 
 ## Tests
-Our program pass all 13 tests. Our tests cover the following parts of our code:
+We built our program using a test driven approach. Our program pass all 13 tests. Our tests cover the following parts of our code:
 ```
 Code Coverage:
 pcap_client :   0%
