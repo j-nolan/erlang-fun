@@ -220,8 +220,9 @@ pattern5_test() ->
 
 %% Helper functions.
 
+% return test data directory
 data_dir(File) ->
-    % TODO: problem with library location to locate tests file
+    % Note: problem with library location to locate tests file
     {ok, Dir} = file:get_cwd(), % returns .../drum-challenge/.eunit
     Dir ++ "/../test/data/" ++ File.
     % this doesn't work...
