@@ -1,9 +1,9 @@
 # MCS - Lab 1 - Drum challenge in Erlang
 
 ## Team members
-Valentin Minder
-Mélanie Huck
-James Nolan
+- Valentin Minder
+- Mélanie Huck
+- James Nolan
 
 ## Introduction
 In this second exercise of lab 1, we will try to solve the drum challenge, originally written for Go developers. The challenge requires a good handling of binary files, which makes Erlang an interesting alternative language to solve the challenge.
