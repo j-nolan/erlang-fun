@@ -1,0 +1,14 @@
+{application, client,
+ [
+  {description, "An Erlang client library"},
+  {vsn, "1"},
+  {modules, [
+             client
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.

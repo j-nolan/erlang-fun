@@ -1,0 +1,14 @@
+{application, broker,
+ [
+  {description, "An Erlang broker library"},
+  {vsn, "1"},
+  {modules, [
+             broker
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
