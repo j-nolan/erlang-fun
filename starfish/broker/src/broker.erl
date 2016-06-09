@@ -66,20 +66,25 @@ accept(LSocket) ->
 	Bin :: erlang:binary(),
     Socket :: inet:socket().
 loop(Socket, Rest) ->
-	case Rest of
-		% Todo: Variable size instead of 5
-		<<Any:5/binary, "\r\n\r\n", Next/binary>> ->
-			?LOG("~p got a complete message...~p~n", [self(), Any]),
-			gen_tcp:send(Socket, Any),
-			loop(Socket, Next);			
-		_ ->
-			?LOG("~p is waiting for next message...~n", [self()]),
+    Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
+    %%Simple = binary:compile_pattern([<<"\r\n">>, <<"\r">>, <<"\n">>]),
+    
+	case binary:match(Rest, Double) of
+		{Start, Len} ->
+            Length = Start + Len,
+            Current = binary:part(Rest, {0, Length}),
+            Remainder = binary:part(Rest, {Length, byte_size(Rest) - Length}),
+            ?LOG("~p got a complete message...~p~n", [self(), Current]),
+            gen_tcp:send(Socket, Current),
+            loop(Socket, Remainder);
+		nomatch ->
+			?LOG("~p is waiting for next chunk...~n", [self()]),
 			case gen_tcp:recv(Socket, 0) of
 				{ok, Bin} ->
-					?LOG("~p got tcp ~p~n", [self(), Bin]),
+					?LOG("~p got a TCP chunk ~p~n", [self(), Bin]),
 					loop(Socket, <<Rest/binary,Bin/binary>>);
 		        Any ->
-					?LOG("~p got unexpected ~p ~n", [self(), Any]),
+					?LOG("~p got unexpected TCP chunk: ~p ~n", [self(), Any]),
 		            exit({loop_unexpected_msg, Any})
 			end
 	end.
