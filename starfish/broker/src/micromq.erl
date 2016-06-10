@@ -6,6 +6,7 @@
 %% API
 -export([start_link/0, start_link_pid/0]).
 -export([stop/0, stop/1]).
+-export([handleSubscribe/2, handlePublish/3]). % temporary
 % NOT API, for spawn.
 -export([loop/2]).
 
@@ -19,6 +20,12 @@
 %% @doc Start the server and register it.
 -spec start_link() -> ok. %% TODO ADD: | {error, Reason}
 start_link() ->
+	% Create the tables that contain:
+	% - clients_by_topic: a bag of {Topic, ClientID}. Lists all ClientID
+	%   matching a given topic
+	% Todo: delete tables when server stops
+	ets:new(clients_by_topic, [bag, named_table]),
+	
 	Pid = start_link_pid(),
 	register(listener, Pid).
 
@@ -46,6 +53,7 @@ stop(Pid) ->
 -spec server(Port) -> true when
 	Port :: inet:port_number().
 server(Port) ->
+
 	% Since we don't close the listen socket and this server is sequential,
 	% subsequent clients will be allowed to connect until the kernel listen
 	% backlog fills up, which is fine.
@@ -125,14 +133,19 @@ handleStatus(ClientID) ->
 	ClientID :: integer(),
 	Topics :: list(),
 	Reply :: binary().
-handleSubscribe(ClientID, Topics) -> 
-	ok. 
+handleSubscribe(ClientID, Topics) ->
+	% Insert ClientID in all topics he subscribes to
+	ets:insert(clients_by_topic, [ {Topic, ClientID} || Topic <- Topics]),
+	<<"ok">>.
 
 -spec handlePublish(ClientID, Topic, Message) -> Reply when
 	ClientID :: integer(),
 	Topic :: binary(),
 	Message :: binary(),
 	Reply :: binary().
-handlePublish(ClientID, Topic, Message) -> 
-	ok.
 
+handlePublish(ClientID, Topic, Message) ->
+	% Retrieve list of clients from that topic
+	Clients = ets:lookup(clients_by_topic, Topic),
+	io:format("~p~n", [Clients]),
+	<<"ok">>.
