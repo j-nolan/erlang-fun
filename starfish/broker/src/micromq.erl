@@ -4,8 +4,7 @@
 -module(micromq).
 
 %% API
--export([start_link/0, start_link_pid/0]).
--export([stop/0, stop/1]).
+-export([start_link/0, stop/0]).
 -export([handleSubscribe/2, handlePublish/3]). % temporary
 % NOT API, for spawn.
 -export([loop/2]).
@@ -17,48 +16,58 @@
 %% API.
 %% ===================================================================
 
-%% @doc Start the server and register it.
--spec start_link() -> ok. %% TODO ADD: | {error, Reason}
+%% @doc Start the server, register it and initialize ressources.
+-spec start_link() -> ok | {error, Reason} when
+	Reason :: system_limit | inet:posix().
 start_link() ->
-	% Create the tables that contain:
-	% - clients_by_topic: a bag of {Topic, ClientID}. Lists all ClientID
-	%   matching a given topic
-	% Todo: delete tables when server stops
-	ets:new(clients_by_topic, [bag, named_table]),
-	
-	Pid = start_link_pid(),
-	register(listener, Pid).
+	?LOG("Controller: trying to start the server.~n"),
+	Listen = gen_tcp:listen(?PORT, [binary, {reuseaddr, true},
+		{active, false}]), 
+	case Listen of 
+		{error, Reason} ->
+			?LOG("Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
+			{error, Reason};
+		{ok, LSocket} ->
+			% Create the tables that contain:
+			% - clients_by_topic: a bag of {Topic, ClientID}. Lists all ClientID
+			%   matching a given topic
+			ets:new(clients_by_topic, [bag, named_table]),
+			Pid = spawn_link(fun() -> server(LSocket) end),
+			gen_tcp:controlling_process(LSocket, Pid),
+			register(server, Pid),
+			?LOG("Controller: server started and data structure initialized.~n"),
+			ok
+	end.
 
-%% @doc Start the server and return its PID.
--spec start_link_pid() -> pid().
-start_link_pid() ->
-	spawn_link(fun() -> server(?PORT) end).
-
-%% Stop the registered server.
+%% @doc stop the registered server and liberate ressources. Does nothing if server is already down.
 -spec stop() -> ok.
 stop() ->
-	stop(whereis(listener)).
-
-%% Stop the server with PID known.
--spec stop(Pid) -> stop when
-	Pid :: pid().
-stop(Pid) ->
-	Pid ! stop.
-
+	% Search for the server 
+	Pid = whereis(server),
+	case Pid of
+		undefined -> 
+			?LOG("Controller: no server running.~n"),
+			ok;
+		_ -> 
+			% Liberate the ressources used by the server.
+			unregister(server),
+			ets:delete(clients_by_topic),
+			Pid ! stop,
+			?LOG("Controller: server stopped and data structure liberated.~n")
+	end.
 
 %% ===================================================================
 %% Private functions.
 %% ===================================================================
 
--spec server(Port) -> true when
-	Port :: inet:port_number().
-server(Port) ->
+-spec server(LSocket) -> ok when
+	LSocket:: inet:socket().
+server(LSocket) ->
 
 	% Since we don't close the listen socket and this server is sequential,
 	% subsequent clients will be allowed to connect until the kernel listen
 	% backlog fills up, which is fine.
-	{ok, LSocket} = gen_tcp:listen(Port, [binary, {reuseaddr, true},
-		{active, false}]), % WARNING No backpressure!
+
 	% Design point: Why spawning another process instead of just calling
 	% `accept/1` directly? We spawn another process to allow the main one to
 	% be always reactive to Erlang messages, despite the fact that
