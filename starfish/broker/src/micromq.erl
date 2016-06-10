@@ -4,7 +4,7 @@
 -module(micromq).
 
 %% API
--export([start_link/0, start_link/1, start_link_pid/0]).
+-export([start_link/0, start_link_pid/0]).
 -export([stop/0, stop/1]).
 % NOT API, for spawn.
 -export([loop/2]).
@@ -17,20 +17,10 @@
 %% ===================================================================
 
 %% @doc Start the server and register it.
--spec start_link() -> ok | {error, Reason}.
+-spec start_link() -> ok. %% TODO ADD: | {error, Reason}
 start_link() ->
 	Pid = start_link_pid(),
 	register(listener, Pid).
-
--type option() ::
-    {address, Address} |
-    {port, Port} |
-    {max_topics, N} |
-    {max_clients, N}.
--spec start_link(Options) -> ok | {error, Reason} when Options :: [option()].
-start_link(Options) ->
-	% TODO: does nothing for NOW.
-	ok.
 
 %% @doc Start the server and return its PID.
 -spec start_link_pid() -> pid().
@@ -77,6 +67,8 @@ server(Port) ->
 			exit({server_unexpected_msg, Any})
 	end.
 
+% ACCEPTOR OF NEW CONNECTION 
+% infinite loop that accepts new clients
 -spec accept(LSocket) -> no_return() when
 	LSocket :: inet:socket().
 accept(LSocket) ->
@@ -85,6 +77,8 @@ accept(LSocket) ->
 	?LOG("Pid: ~p~n", [Pid]),
 	accept(LSocket).
 
+% CLIENT WORKER
+% infinite loop that listen to clients message.
 -spec loop(Socket, Bin) -> ok when
 	Bin :: erlang:binary(),
 	Socket :: inet:socket().
@@ -98,7 +92,10 @@ loop(Socket, Rest) ->
 			Current = binary:part(Rest, {0, Length}),
 			Remainder = binary:part(Rest, {Length, byte_size(Rest) - Length}),
 			?LOG("~p got a complete message...~p~n", [self(), Current]),
-			gen_tcp:send(Socket, Current),
+			Reply = Current,
+			% TODO: use this.
+			%Reply = parse(Current),
+			gen_tcp:send(Socket, Reply),
 			loop(Socket, Remainder);
 		nomatch ->
 			?LOG("~p is waiting for next chunk...~n", [self()]),
@@ -111,4 +108,31 @@ loop(Socket, Rest) ->
 					exit({loop_unexpected_msg, Any})
 			end
 	end.
+
+-spec parse(Request) -> Reply when
+	Request :: erlang:binary(),
+	Reply :: erlang:binary().
+parse(Request) -> 
+	ok. % Reply
+
+-spec handleStatus(ClientID) -> Reply when
+	ClientID :: erlang:integer(),
+	Reply :: erlang:binary().
+handleStatus(ClientID) -> 
+	ok. % status d client
+
+-spec handleSubscribe(ClientID, Topics) -> Reply when
+	ClientID :: erlang:integer(),
+	Topics :: erlang:list(),
+	Reply :: erlang:binary().
+handleSubscribe(ClientID, Topics) -> 
+	ok. 
+
+-spec handlePublish(ClientID, Topic, Message) -> Reply when
+	ClientID :: erlang:integer(),
+	Topic :: erlang:binary(),
+	Message :: erlang:binary(),
+	Reply :: erlang:binary().
+handlePublish(ClientID, Topic, Message) -> 
+	ok.
 
