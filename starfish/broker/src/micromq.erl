@@ -4,7 +4,7 @@
 -module(micromq).
 
 %% API
--export([start_link/0, stop/0]).
+-export([start_link/0, start_link/1, stop/0]).
 -export([handleSubscribe/2, handlePublish/3]). % temporary
 % NOT API, for spawn.
 -export([loop/2]).
@@ -16,16 +16,95 @@
 %% API.
 %% ===================================================================
 
-%% @doc Start the server, register it and initialize ressources.
+%% @doc Start the server with default options, register it and initialize ressources.
 -spec start_link() -> ok | {error, Reason} when
 	Reason :: system_limit | inet:posix().
 start_link() ->
-	?LOG("Controller: trying to start the server.~n"),
+	create_options(),
+	start_link_internal().
+
+%% @doc stop the registered server and liberate ressources. Does nothing if server is already down.
+-spec stop() -> ok.
+stop() ->
+	% Search for the server 
+	Pid = whereis(server),
+	case Pid of
+		undefined -> 
+			?LOG("STOP Controller: no server running.~n"),
+			ok;
+		_ -> 
+			% Liberate the ressources used by the server.
+			unregister(server),
+			ets:delete(clients_by_topic),
+			ets:delete(options),
+			Pid ! stop,
+			?LOG("STOP Controller: server stopped and data structure liberated.~n")
+	end.
+
+%% @doc Start the server with custum options, register it and initialize ressources.
+-type option() ::
+	{address, Address::binary()} |
+	{port, Port::integer()} |
+	{max_topics, N::integer()} |
+	{max_clients, N::integer()} |
+	{verbosity, V::boolean()}.
+-spec start_link(Options) -> ok | {error, Reason} when 
+	Options :: [option()],
+	Reason :: system_limit | inet:posix().
+start_link(Options) ->
+	create_options(),
+	?LOG("Controller: parsing launch options.~n"),
+	handle_options(Options),
+	start_link_internal().
+
+%% ===================================================================
+%% Private functions.
+%% ===================================================================
+
+% Creates a default set of options with the macros (only if no server runninh yet).
+-spec create_options() -> ok.
+create_options() ->
+	% check if the server is already running
+	Server = whereis(server),
+	case Server of
+		% Server not running -> proceed.
+		undefined ->
+			ets:new(options, [set, named_table]),
+			ets:insert(options, {address, ?ADDRESS}),
+			ets:insert(options, {port, ?PORT}),
+			ets:insert(options, {max_topics, ?MAX_TOPICS}),
+			ets:insert(options, {max_clients, ?MAX_CLIENTS}),
+			ets:insert(options, {verbosity, ?VERBOSITY});
+		_ -> % server already running -> abort.
+			ok
+	end,
+	ok.
+
+% Override default options with the given options (the last one takes priority).
+-spec handle_options(Options) -> ok when 
+	Options :: [option()].
+handle_options(Options) ->
+	case Options of
+		[] -> 
+			ok;
+		[H|T] ->
+			% H is a tuple {options, Value}
+			ets:insert(options, H),
+			handle_options(T)
+	end.
+
+-spec start_link_internal() -> ok | {error, Reason} when
+	Reason :: system_limit | inet:posix().
+start_link_internal() ->
+	?LOG("START Controller: trying to start the server.~n"),
+	[{port,Port}|_] = ets:lookup(options, port),
+	[{address,Address}|_] = ets:lookup(options, address),
+	?LOG("Starting on Address: ~p, Port: ~p.~n", [Address, Port]),
 	Listen = gen_tcp:listen(?PORT, [binary, {reuseaddr, true},
 		{active, false}]), 
 	case Listen of 
 		{error, Reason} ->
-			?LOG("Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
+			?LOG("START Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
 			{error, Reason};
 		{ok, LSocket} ->
 			% Create the tables that contain:
@@ -38,27 +117,6 @@ start_link() ->
 			?LOG("Controller: server started and data structure initialized.~n"),
 			ok
 	end.
-
-%% @doc stop the registered server and liberate ressources. Does nothing if server is already down.
--spec stop() -> ok.
-stop() ->
-	% Search for the server 
-	Pid = whereis(server),
-	case Pid of
-		undefined -> 
-			?LOG("Controller: no server running.~n"),
-			ok;
-		_ -> 
-			% Liberate the ressources used by the server.
-			unregister(server),
-			ets:delete(clients_by_topic),
-			Pid ! stop,
-			?LOG("Controller: server stopped and data structure liberated.~n")
-	end.
-
-%% ===================================================================
-%% Private functions.
-%% ===================================================================
 
 -spec server(LSocket) -> ok when
 	LSocket:: inet:socket().
@@ -230,7 +288,8 @@ bad_request() ->
 	Message :: binary().
 bad_request(Message) ->
 	BR = bad_request(),
-	case ?VERBOSE of
+	[{verbosity, V}|_] = ets:lookup(options, verbosity),
+	case V of
 		false -> BR;
 		_ -> 
 			<<BR/binary, "Enter 'help' for indications.\nMessage : ", Message/binary, "\n">>
