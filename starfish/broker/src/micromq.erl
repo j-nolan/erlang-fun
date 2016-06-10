@@ -80,7 +80,7 @@ accept(LSocket) ->
 % CLIENT WORKER
 % infinite loop that listen to clients message.
 -spec loop(Socket, Bin) -> ok when
-	Bin :: erlang:binary(),
+	Bin :: binary(),
 	Socket :: inet:socket().
 loop(Socket, Rest) ->
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
@@ -110,29 +110,29 @@ loop(Socket, Rest) ->
 	end.
 
 -spec parse(Request) -> Reply when
-	Request :: erlang:binary(),
-	Reply :: erlang:binary().
+	Request :: binary(),
+	Reply :: binary().
 parse(Request) -> 
 	ok. % Reply
 
 -spec handleStatus(ClientID) -> Reply when
-	ClientID :: erlang:integer(),
-	Reply :: erlang:binary().
+	ClientID :: integer(),
+	Reply :: binary().
 handleStatus(ClientID) -> 
 	ok. % status d client
 
 -spec handleSubscribe(ClientID, Topics) -> Reply when
-	ClientID :: erlang:integer(),
-	Topics :: erlang:list(),
-	Reply :: erlang:binary().
+	ClientID :: integer(),
+	Topics :: list(),
+	Reply :: binary().
 handleSubscribe(ClientID, Topics) -> 
 	ok. 
 
 -spec handlePublish(ClientID, Topic, Message) -> Reply when
-	ClientID :: erlang:integer(),
-	Topic :: erlang:binary(),
-	Message :: erlang:binary(),
-	Reply :: erlang:binary().
+	ClientID :: integer(),
+	Topic :: binary(),
+	Message :: binary(),
+	Reply :: binary().
 handlePublish(ClientID, Topic, Message) -> 
 	ok.
 
