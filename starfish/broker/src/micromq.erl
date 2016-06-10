@@ -4,7 +4,10 @@
 -module(micromq).
 
 %% API
--export([start_link/0, stop/1, loop/2]).
+-export([start_link/0, start_link/1, start_link_pid/0]).
+-export([stop/0, stop/1]).
+% NOT API, for spawn.
+-export([loop/2]).
 
 -include("micromq.hrl").
 
@@ -13,14 +16,33 @@
 %% API.
 %% ===================================================================
 
-%% @doc Start the echo server.
--spec start_link() -> pid().
+%% @doc Start the server and register it.
+-spec start_link() -> ok | {error, Reason}.
 start_link() ->
+	Pid = start_link_pid(),
+	register(listener, Pid).
 
-	%spawn_link(fun() -> server(-1) end). % <= Try this with the dialyzer!
+-type option() ::
+    {address, Address} |
+    {port, Port} |
+    {max_topics, N} |
+    {max_clients, N}.
+-spec start_link(Options) -> ok | {error, Reason} when Options :: [option()].
+start_link(Options) ->
+	% TODO: does nothing for NOW.
+	ok.
+
+%% @doc Start the server and return its PID.
+-spec start_link_pid() -> pid().
+start_link() ->
 	spawn_link(fun() -> server(?PORT) end).
 
-%% Stop the echo server.
+%% Stop the registered server.
+-spec stop() -> ok.
+stop() ->
+	stop(whereis(listener)).
+
+%% Stop the server with PID known.
 -spec stop(Pid) -> stop when
 	Pid :: pid().
 stop(Pid) ->
