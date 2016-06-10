@@ -1,9 +1,9 @@
-{application, broker,
+{application, micromq,
  [
-  {description, "An Erlang broker library"},
+  {description, "An Erlang MQTT library"},
   {vsn, "1"},
   {modules, [
-             broker
+             micromq
             ]},
   {registered, []},
   {applications, [

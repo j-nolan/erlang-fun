@@ -1,12 +1,12 @@
 %%
 %% Sequential echo server.
 %%
--module(broker).
+-module(micromq).
 
 %% API
 -export([start_link/0, stop/1, loop/2]).
 
--include("broker.hrl").
+-include("micromq.hrl").
 
 
 %% ===================================================================
@@ -16,6 +16,7 @@
 %% @doc Start the echo server.
 -spec start_link() -> pid().
 start_link() ->
+
 	%spawn_link(fun() -> server(-1) end). % <= Try this with the dialyzer!
 	spawn_link(fun() -> server(?PORT) end).
 
