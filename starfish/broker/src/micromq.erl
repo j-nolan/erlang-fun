@@ -34,7 +34,7 @@ start_link(Options) ->
 
 %% @doc Start the server and return its PID.
 -spec start_link_pid() -> pid().
-start_link() ->
+start_link_pid() ->
 	spawn_link(fun() -> server(?PORT) end).
 
 %% Stop the registered server.
