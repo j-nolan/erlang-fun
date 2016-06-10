@@ -92,17 +92,14 @@ accept(LSocket) ->
 	Socket :: inet:socket().
 loop(Socket, Rest) ->
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
-	%%Simple = binary:compile_pattern([<<"\r\n">>, <<"\r">>, <<"\n">>]),
 	
 	case binary:match(Rest, Double) of
 		{Start, Len} ->
 			Length = Start + Len,
-			Current = binary:part(Rest, {0, Length}),
+			Current = binary:part(Rest, {0, Start}), % discard the double return separation.
 			Remainder = binary:part(Rest, {Length, byte_size(Rest) - Length}),
 			?LOG("~p got a complete message...~p~n", [self(), Current]),
-			Reply = Current,
-			% TODO: use this.
-			%Reply = parse(Current),
+			Reply = parse(Current),
 			gen_tcp:send(Socket, Reply),
 			loop(Socket, Remainder);
 		nomatch ->
@@ -117,11 +114,118 @@ loop(Socket, Rest) ->
 			end
 	end.
 
+% Parses any binary request received, determines the correct type of request based on prefix,
+% makes use of dedicated parser for certain request, does the appropriate call and returns the reply as a binary.
+% Returns a '400 Bad Request' binary when the format is not met or the protocol violated.
 -spec parse(Request) -> Reply when
 	Request :: binary(),
 	Reply :: binary().
 parse(Request) -> 
-	ok. % Reply
+	case Request of
+		<<"topic:", Payload/binary>> ->
+			parse_publish(Payload);			
+		<<"subscribe:", Payload/binary>> ->
+			parse_subscribe(Payload);
+		<<"status">> ->
+			%TODO: handleStatus(Client_ID),
+			<<"Got: status\n">>;
+		<<"help">> ->
+			<<"Welcome! I am a simple MQTT server.\n
+			Allowed commands are: 'topic:', 'subscribe:', 'status' and 'help'\n
+			Simple line-return does nothing and allows multi-line commands and multi-line text body\n
+			Double line-return commits your command to the server\n
+			\n
+			If your command is not supported or malformed, you'll get a '400 Bad Request' message,
+			with some extra information if the server is started with VERBOSE option true.
+			Warning: all commands headers are case-sensitive!\n
+			\n
+			Publish:\n
+			$> topic: <topic name>\n
+			$> body: <msg body>\n
+			This command MUST contain at least 2 lines, the first for 'topic:', the second for 'body:'\n
+			<topic name> MUST not contain commas or line-return, but MAY contains spaces.\n
+			<msg body> MAY be any text and contain single line-return and commas\n
+			\n
+			Subscribe: \n
+			$> subscribe: <topic1> [ , <topic2>, ... ]\n
+			Topics MUST be a on single line.
+			<topicX> MUST not contain commas or line-return, but MAY contains spaces.\n">>;
+		_ -> 
+			bad_request(<<"Command not found: '", Request/binary, "'.">>)
+	end.
+
+% Parse a publish request payload, does the appropriate call and returns the reply.
+-spec parse_publish(Payload) -> binary() when
+	Payload :: binary().
+parse_publish(Payload) ->
+	Simple = binary:compile_pattern([<<"\r\n">>, <<"\r">>, <<"\n">>]),
+	% Check the double-line
+	case binary:match(Payload, Simple) of
+		nomatch ->
+			bad_request(<<"Publish command MUST contain at least 2 lines.\n
+				$> topic: <topic name>\n
+				$> body: <msg body>">>);
+		{Start, Len} ->
+			% Extract the first line
+			Topic = binary:part(Payload, 0, Start),
+			% Checks the first line is a single item (no commas), by splitting globally and check the length is 0.
+			Topics = binary:split(Payload, <<",">>, [trim_all, global]),
+			case length(Topics) of
+				1 ->
+					% Extract the second line
+					Discard = Start+Len, % length of topic data + return line.
+					Bodydata = binary:part(Payload, Discard, size(Payload) - Discard),
+					% Second line must start with body: and extract the rest as a message.
+					case binary:match(Bodydata, <<"body:">>) of
+						{0, L} ->
+							Body = binary:part(Bodydata, L, size(Bodydata) - L),
+							%TODO: handlePublish(Client_ID, Topic, Body),
+							<<"Got: topic: ", Topic/binary, ", body:", Body/binary>>;
+						_ ->
+							bad_request(<<"2nd line of publish command does not comply to body format:
+								$> body: <msg body>
+								where <msg body> MAY be any text and contain single line-return and commas">>)
+					end;
+				_ ->
+					bad_request(<<"1st line of publish command does not to topic format
+						$> topic: <topic name>
+						where <topic name> MUST not contain commas or line-return, but MAY contains spaces.">>)
+			end
+		
+	end.
+
+% Parse a subscribe request payload, does the appropriate call and returns the reply.
+-spec parse_subscribe(Payload) -> binary() when
+	Payload :: binary().
+parse_subscribe(Payload) ->
+	Simple = binary:compile_pattern([<<"\r\n">>, <<"\r">>, <<"\n">>]),
+	% Check the single line.
+	case binary:match(Payload, Simple) of
+		{_, _} ->
+			bad_request(<<"subscribe command items MUST be on a single line.
+				$> subscribe: <topic1> [ , <topic2>, ... ]">>);
+		nomatch ->
+			% Split the whole payload and trim all leading and trailing spaces
+			Topics = binary:split(Payload, <<",">>, [trim_all, global]),
+			%TODO: handleSubscribe(Client_ID, Topics),
+			<<"Got: subscribe: ", Payload/binary>>
+	end.
+
+% Returns a generic 400 Bad Request.
+-spec bad_request() -> binary().
+bad_request() ->
+	<<"400 Bad Request\n">>.
+
+% Returns a message specific 400 Bad Request.
+-spec bad_request(Message) -> binary() when
+	Message :: binary().
+bad_request(Message) ->
+	BR = bad_request(),
+	case ?VERBOSE of
+		false -> BR;
+		_ -> 
+			<<BR/binary, "Enter 'help' for indications.\nMessage : ", Message/binary, "\n">>
+	end.
 
 -spec handleStatus(ClientID) -> Reply when
 	ClientID :: integer(),
