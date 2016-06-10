@@ -1,3 +1,23 @@
+# Utilisation
+## Compilation simple
+Avec cette méthode, il faut répéter les étapes 2 et 3 à chaque fois que les sources sont modifiées
+1. Lancer un terminal dans le répertoire du serveur
+2. Compiler les sources : `rebar compile`
+3. Lancer le programme : `erl -pa ebin`
+
+## Reload automatique
+Avec cette méthode, à chaque fois que `erl compile` est exécuté, les nouvelles sources sont chargées
+1. Lancer un terminal dans le répertoire du serveur
+2. Compiler les sources : `rebar compile`
+3. Lancer le programme avec le `reloader` : `erl -pa ebin -pa deps/*/ebin -run reloader start 2`
+
+
+## Récupérer et mettre à jour les dépendances
+Dans un terminal depuis le répertoire du serveur :
+- Récupérer les dépendances : `rebar get-deps`
+- Mettre à jour les dépendances : `rebar update-deps`
+
+
 # Serveur
 ## Structures de données
 - `client_records` : `Map(client_id => client_record)`
