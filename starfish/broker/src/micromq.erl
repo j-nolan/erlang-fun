@@ -7,6 +7,21 @@
 -export([start_link/0, start_link/1, stop/0]).
 -include("micromq.hrl").
 
+%% TESTS ONLY
+-ifdef(TEST).
+-export([
+	parse/2,
+	parse_publish/2,
+	parse_subscribe/2,
+	bad_request/0,
+	bad_request/1,
+	handleStatus/1,
+	handleSubscribe/2,
+	handlePublish/3,
+	distribute/2
+	]).
+-endif.
+
 
 %% ===================================================================
 %% API.
@@ -193,7 +208,7 @@ accept(LSocket, ClientID) ->
 worker(Socket, ClientID) ->
 	log("~p (Worker) started for client with ID: ~p~n", [self(), ClientID]),
 	Cid = integer_to_binary(ClientID),
-	gen_tcp:send(Socket, <<"client_id: ", Cid/binary, "\n">>),
+	gen_tcp:send(Socket, <<"client_id: ", Cid/binary, "\n\n">>),
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
 	loop(Socket, Double, ClientID, <<>>).
 
