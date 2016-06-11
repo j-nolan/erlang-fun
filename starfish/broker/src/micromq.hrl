@@ -4,8 +4,6 @@
 -define(PORT, 5017).
 -define(MAX_TOPICS, 10000).
 -define(MAX_CLIENTS, 10000).
-% values: none, minimal, verbose, logs
--define(VERBOSITY, true).
-
--define(LOG(Fmt), io:format(Fmt)).
--define(LOG(Fmt, Args), io:format(Fmt, Args)).
+% values: none (=quiet), minimal (generic 400 bad request), verbose (full 400 bad request with comments)
+-define(VERBOSITY, none).
+-define(LOGS, false).

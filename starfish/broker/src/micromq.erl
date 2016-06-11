@@ -30,7 +30,7 @@ stop() ->
 	Pid = whereis(server),
 	case Pid of
 		undefined -> 
-			?LOG("STOP Controller: no server running.~n"),
+			log("STOP Controller: no server running.~n"),
 			ok;
 		_ -> 
 			% Liberate the ressources used by the server.
@@ -39,7 +39,7 @@ stop() ->
 			ets:delete(clients_by_topic),
 			ets:delete(clients_records),
 			ets:delete(options),
-			?LOG("STOP Controller: server stopped and data structure liberated.~n")
+			log("STOP Controller: server stopped and data structure liberated.~n")
 	end.
 
 %% @doc Start the server with custum options, register it and initialize ressources.
@@ -48,19 +48,34 @@ stop() ->
 	{port, Port::integer()} |
 	{max_topics, N::integer()} |
 	{max_clients, N::integer()} |
-	{verbosity, V::boolean()}.
+	{verbosity, V::atom()}.
 -spec start_link(Options) -> ok | {error, Reason} when 
 	Options :: [option()],
 	Reason :: system_limit | inet:posix().
 start_link(Options) ->
 	create_options(),
-	?LOG("Controller: parsing launch options.~n"),
+	log("Controller: parsing launch options.~n"),
 	handle_options(Options),
 	start_link_internal().
 
 %% ===================================================================
 %% Private functions.
 %% ===================================================================
+-spec log(Fmt) -> ok when
+	Fmt :: io:format().
+log(Fmt) ->
+	log(Fmt, []).
+
+-spec log(Fmt, Args) -> ok when
+	Fmt :: io:format(),
+	Args :: [term()]. 
+log(Fmt, Args)->
+	case ?LOGS of
+		true ->
+			io:format(Fmt, Args); % print the logs
+		_ ->
+			ok % keep quiet
+	end.
 
 % Creates a default set of options with the macros (only if no server runninh yet).
 -spec create_options() -> ok.
@@ -75,7 +90,8 @@ create_options() ->
 			ets:insert(options, {port, ?PORT}),
 			ets:insert(options, {max_topics, ?MAX_TOPICS}),
 			ets:insert(options, {max_clients, ?MAX_CLIENTS}),
-			ets:insert(options, {verbosity, ?VERBOSITY});
+			ets:insert(options, {verbosity, ?VERBOSITY}),
+			ets:insert(options, {logs, ?LOGS});
 		_ -> % server already running -> abort.
 			ok
 	end,
@@ -97,17 +113,17 @@ handle_options(Options) ->
 -spec start_link_internal() -> ok | {error, Reason} when
 	Reason :: system_limit | inet:posix().
 start_link_internal() ->
-	?LOG("START Controller: trying to start the server.~n"),
+	log("START Controller: trying to start the server.~n"),
 	[{port,Port}|_] = ets:lookup(options, port),
 	[{address,Address}|_] = ets:lookup(options, address),
 	% getaddr(Host, Family) -> {ok, Address} | {error, posix()}
 	{ok, RealAddress} = inet:getaddr(Address, inet),
-	?LOG("Starting on: ~p (~p), Port: ~p.~n", [Address, RealAddress, Port]),
+	log("Starting on: ~p (~p), Port: ~p.~n", [Address, RealAddress, Port]),
 	Listen = gen_tcp:listen(Port, [binary, {reuseaddr, true},
 		{active, false}, {ifaddr, RealAddress}]), % , {ifaddr, Address}
 	case Listen of 
 		{error, Reason} ->
-			?LOG("START Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
+			log("START Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
 			{error, Reason};
 		{ok, LSocket} ->
 			% Tables are public because all processes may add data!
@@ -121,7 +137,7 @@ start_link_internal() ->
 			Pid = spawn_link(fun() -> server(LSocket) end),
 			gen_tcp:controlling_process(LSocket, Pid),
 			register(server, Pid),
-			?LOG("Controller: server started and data structure initialized.~n"),
+			log("Controller: server started and data structure initialized.~n"),
 			ok
 	end.
 
@@ -141,11 +157,11 @@ server(LSocket) ->
 	Acceptor = spawn_link(fun() -> accept(LSocket, 1) end),
 	receive
 		stop ->
-			?LOG("Server: stopping~n"),
+			log("Server: stopping~n"),
 			% Terminate the acceptor also if it is blocked.
 			exit(Acceptor, stop);
 		Any ->
-			?LOG("Server: unexpected msg ~p~n", [Any]),
+			log("Server: unexpected msg ~p~n", [Any]),
 			exit({server_unexpected_msg, Any})
 	end.
 
@@ -158,9 +174,9 @@ accept(LSocket, ClientID) ->
 	{ok, Socket} = gen_tcp:accept(LSocket), % WARNING Blocking!
 	% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
 	ets:insert(clients_records, {ClientID, Socket, [], [], 0, 0}),
-	?LOG("~p (Acceptor) got a new client with ID: ~p~n", [self(), ClientID]),
+	log("~p (Acceptor) got a new client with ID: ~p~n", [self(), ClientID]),
 	Pid = spawn(?MODULE, worker, [Socket, ClientID]),
-	?LOG("Pid: ~p~n", [Pid]),
+	log("Pid: ~p~n", [Pid]),
 	accept(LSocket, ClientID + 1).
 
 % CLIENT WORKER
@@ -169,7 +185,7 @@ accept(LSocket, ClientID) ->
 	Socket :: inet:socket(),
 	ClientID :: integer().
 worker(Socket, ClientID) ->
-	?LOG("~p (Worker) started for client with ID: ~p~n", [self(), ClientID]),
+	log("~p (Worker) started for client with ID: ~p~n", [self(), ClientID]),
 	Cid = integer_to_binary(ClientID),
 	gen_tcp:send(Socket, <<"client_id: ", Cid/binary, "\n">>),
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
@@ -188,15 +204,15 @@ loop(Socket, Double, ClientID, Rest) ->
 			Length = Start + Len,
 			Current = binary:part(Rest, {0, Start}), % discard the double return separation.
 			Remainder = binary:part(Rest, {Length, byte_size(Rest) - Length}),
-			?LOG("~p (Client Looper ~p) got a complete message: ~p~n", [self(), ClientID, Current]),
+			log("~p (Client Looper ~p) got a complete message: ~p~n", [self(), ClientID, Current]),
 			Reply = parse(Current, ClientID),
 			gen_tcp:send(Socket, Reply),
 			loop(Socket, Double, ClientID, Remainder);
 		nomatch ->
-			?LOG("~p (Client Looper ~p) is waiting for next TCP chunk...~n", [self(), ClientID]),
+			log("~p (Client Looper ~p) is waiting for next TCP chunk...~n", [self(), ClientID]),
 			case gen_tcp:recv(Socket, 0) of
 				{ok, Bin} ->
-					?LOG("~p (Client Looper ~p) got a TCP chunk: ~p~n", [self(), ClientID, Bin]),
+					log("~p (Client Looper ~p) got a TCP chunk: ~p~n", [self(), ClientID, Bin]),
 					loop(Socket, Double, ClientID, <<Rest/binary,Bin/binary>>);
 				{error,closed} ->
 					% Clean up all ressources associated to the client.
@@ -205,21 +221,21 @@ loop(Socket, Double, ClientID, Rest) ->
 					% 2. server is tear down: it will fail (but we dont care, server tear down will erase everything)
 					try 
 						Record = ets:lookup(clients_records, ClientID),
-						?LOG("~p (Client Looper ~p) is closing connection... ~n", [self(), ClientID]),
+						log("~p (Client Looper ~p) is closing connection... ~n", [self(), ClientID]),
 						% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
 						[{ClientID, _, TopicSubscribed, _, _, _}|_] = Record,
 						[ets:delete_object(clients_by_topic, {Topic, ClientID}) || Topic <- TopicSubscribed],
 						ets:delete(clients_records, ClientID),
-						?LOG("~p (Client Looper ~p) closed connection (ressources liberated). ~n", [self(), ClientID])
+						log("~p (Client Looper ~p) closed connection (ressources liberated). ~n", [self(), ClientID])
 					catch
 						error:_ -> ok
 					end,
 					ok;
 				{error,Error} ->
-					?LOG("~p (Client Looper ~p) got unexpected TCP error: ~p ~n", [self(), ClientID, Error]),
+					log("~p (Client Looper ~p) got unexpected TCP error: ~p ~n", [self(), ClientID, Error]),
 					exit({loop_unexpected_msg, Error});
  				Any ->
-					?LOG("~p (Client Looper ~p) got unexpected TCP chunk: ~p ~n", [self(), ClientID, Any]),
+					log("~p (Client Looper ~p) got unexpected TCP chunk: ~p ~n", [self(), ClientID, Any]),
 					exit({loop_unexpected_msg, Any})
 			end
 	end.
@@ -234,16 +250,16 @@ loop(Socket, Double, ClientID, Rest) ->
 parse(Request, ClientID) -> 
 	case Request of
 		<<"topic:", Payload/binary>> ->
-			?LOG("~p (Client Looper ~p) got publish command, payload: ~p. ~n", [self(), ClientID, Payload]),
+			log("~p (Client Looper ~p) got publish command, payload: ~p. ~n", [self(), ClientID, Payload]),
 			parse_publish(Payload, ClientID);			
 		<<"subscribe:", Payload/binary>> ->
-			?LOG("~p (Client Looper ~p) got subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
+			log("~p (Client Looper ~p) got subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
 			parse_subscribe(Payload, ClientID);
 		<<"status">> ->
-			?LOG("~p (Client Looper ~p) got status command. ~n", [self(), ClientID]),
+			log("~p (Client Looper ~p) got status command. ~n", [self(), ClientID]),
 			handleStatus(ClientID);
 		<<"help">> ->
-			?LOG("~p (Client Looper ~p) got help command. ~n", [self(), ClientID]),
+			log("~p (Client Looper ~p) got help command. ~n", [self(), ClientID]),
 			<<"Welcome! I am a simple MQTT server.\n
 			Allowed commands are: 'topic:', 'subscribe:', 'status' and 'help'\n
 			Simple line-return does nothing and allows multi-line commands and multi-line text body\n
@@ -265,7 +281,7 @@ parse(Request, ClientID) ->
 			Topics MUST be a on single line.
 			<topicX> MUST not contain commas or line-return, but MAY contains spaces.\n">>;
 		_ ->
-			?LOG("~p (Client Looper ~p) got unknown command: ~p. ~n", [self(), ClientID, Request]),
+			log("~p (Client Looper ~p) got unknown command: ~p. ~n", [self(), ClientID, Request]),
 			bad_request(<<"Command not found: '", Request/binary, "'.">>)
 	end.
 
@@ -295,7 +311,7 @@ parse_publish(Payload, ClientID) ->
 					case binary:match(Bodydata, <<"body:">>) of
 						{0, L} ->
 							Body = binary:part(Bodydata, L, size(Bodydata) - L),
-							?LOG("~p (Client Looper ~p) got valid publish command, Topic: ~p, Body: ~p. ~n", [self(), ClientID, Topic, Body]),
+							log("~p (Client Looper ~p) got valid publish command, Topic: ~p, Body: ~p. ~n", [self(), ClientID, Topic, Body]),
 							[TopicTrimmed|_] = Topics,
 							handlePublish(ClientID, TopicTrimmed, Body);
 						_ ->
@@ -323,7 +339,7 @@ parse_subscribe(Payload, ClientID) ->
 			bad_request(<<"subscribe command items MUST be on a single line.
 				$> subscribe: <topic1> [ , <topic2>, ... ]">>);
 		nomatch ->
-			?LOG("~p (Client Looper ~p) got valid subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
+			log("~p (Client Looper ~p) got valid subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
 			handleSubscribe(ClientID, Payload)
 	end.
 
@@ -336,13 +352,16 @@ bad_request() ->
 -spec bad_request(Message) -> binary() when
 	Message :: binary().
 bad_request(Message) ->
-	?LOG("~p got bad_request: ~p. ~n", [self(), Message]),
+	log("~p got bad_request: ~p. ~n", [self(), Message]),
 	BR = bad_request(),
 	[{verbosity, V}|_] = ets:lookup(options, verbosity),
 	case V of
-		false -> BR;
-		_ -> 
-			<<BR/binary, "Enter 'help' for indications.\nMessage : ", Message/binary, "\n">>
+		none ->
+			ok; % keeps quiet, discard bad request silently
+		minimal ->
+			<<BR/binary, "\n">>; % generic message (always same)
+		_ ->  %verbose, logs
+			<<BR/binary, "Enter 'help' for indications.\nMessage : ", Message/binary, "\n\n">>
 	end.
 
 -spec handleStatus(ClientID) -> Reply when
@@ -352,7 +371,7 @@ handleStatus(ClientID) ->
 	% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
 	ClientRecord = ets:lookup(clients_records, ClientID),
 	[{ClientID, _ , TopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}] = ClientRecord,
-	?LOG("~p (Client Status ~p) got: rcv: ~p, sent: ~p. ~n", [self(), ClientID, NbMsgReceived, NbMsgSent]),
+	log("~p (Client Status ~p) got: rcv: ~p, sent: ~p. ~n", [self(), ClientID, NbMsgReceived, NbMsgSent]),
 	Cid = integer_to_binary(ClientID),
 	NbR = integer_to_binary(NbMsgReceived),
 	NbS = integer_to_binary(NbMsgSent),
@@ -392,10 +411,10 @@ handlePublish(ClientID, Topic, Message) ->
 	% Retrieve list of clients from that topic
 	Clients = ets:lookup(clients_by_topic, Topic),
 	io:format("~p~n", [Clients]),
-	?LOG("~p (Client Publish ~p) sent message to subscribers: ~p.~n", [self(), ClientID, [Clients]]),
+	log("~p (Client Publish ~p) sent message to subscribers: ~p.~n", [self(), ClientID, [Clients]]),
 
 	[distribute(ClientIDDest, Data) || {_, ClientIDDest} <- Clients],
-	?LOG("~p (Client Publish ~p) sent message to subscribers of ~p. ~n", [self(), ClientID, Topic]),
+	log("~p (Client Publish ~p) sent message to subscribers of ~p. ~n", [self(), ClientID, Topic]),
 	
 	% Update record of sender: [TopicPublished] prefixed by the new topic, NbMsgSent (increment)
 	ClientRecord = ets:lookup(clients_records, ClientID),
