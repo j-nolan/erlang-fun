@@ -7,7 +7,7 @@
 -export([start_link/0, start_link/1, stop/0]).
 -export([handleSubscribe/2, handlePublish/3]). % temporary
 % NOT API, for spawn.
--export([loop/2]).
+-export([worker/2]).
 
 -include("micromq.hrl").
 
@@ -133,7 +133,7 @@ server(LSocket) ->
 	% be always reactive to Erlang messages, despite the fact that
 	% `gen_tcp:accept/1` is blocking in a unnatural way for Erlang (outside a
 	% `receive` block).
-	Acceptor = spawn_link(fun() -> accept(LSocket) end),
+	Acceptor = spawn_link(fun() -> accept(LSocket, 1) end),
 	receive
 		stop ->
 			?LOG("Server: stopping~n"),
@@ -146,39 +146,59 @@ server(LSocket) ->
 
 % ACCEPTOR OF NEW CONNECTION 
 % infinite loop that accepts new clients
--spec accept(LSocket) -> no_return() when
-	LSocket :: inet:socket().
-accept(LSocket) ->
+-spec accept(LSocket, ClientID) -> no_return() when
+	LSocket :: inet:socket(),
+	ClientID :: integer().
+accept(LSocket, ClientID) ->
 	{ok, Socket} = gen_tcp:accept(LSocket), % WARNING Blocking!
-	Pid = spawn(?MODULE, loop, [Socket, <<>>]),
+	?LOG("~p (Acceptor) got a new client with ID: ~p~n", [self(), ClientID]),
+	Pid = spawn(?MODULE, worker, [Socket, ClientID]),
 	?LOG("Pid: ~p~n", [Pid]),
-	accept(LSocket).
+	accept(LSocket, ClientID + 1).
 
 % CLIENT WORKER
-% infinite loop that listen to clients message.
--spec loop(Socket, Bin) -> ok when
-	Bin :: binary(),
-	Socket :: inet:socket().
-loop(Socket, Rest) ->
+% Initiate client and calls the looper.
+-spec worker(Socket, ClientID) -> ok when
+	Socket :: inet:socket(),
+	ClientID :: integer().
+worker(Socket, ClientID) ->
+	?LOG("~p (Worker) started for client with ID: ~p~n", [self(), ClientID]),
+	gen_tcp:send(Socket, <<"client_id: ", "\n">>), %ClientID/integer, % TODO check format of integer
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
-	
+	loop(Socket, Double, ClientID, <<>>).
+
+% CLIENT LOOPER
+% infinite loop that listen to clients message.
+-spec loop(Socket, Double, ClientID, Rest) -> ok when
+	Socket :: inet:socket(), 
+	Double :: binary(),
+	ClientID :: integer(),
+	Rest :: binary().
+loop(Socket, Double, ClientID, Rest) ->
 	case binary:match(Rest, Double) of
 		{Start, Len} ->
 			Length = Start + Len,
 			Current = binary:part(Rest, {0, Start}), % discard the double return separation.
 			Remainder = binary:part(Rest, {Length, byte_size(Rest) - Length}),
-			?LOG("~p got a complete message...~p~n", [self(), Current]),
-			Reply = parse(Current),
+			?LOG("~p (Client Looper ~p) got a complete message: ~p~n", [self(), ClientID, Current]),
+			Reply = parse(Current, ClientID),
 			gen_tcp:send(Socket, Reply),
-			loop(Socket, Remainder);
+			loop(Socket, Double, ClientID, Remainder);
 		nomatch ->
-			?LOG("~p is waiting for next chunk...~n", [self()]),
+			?LOG("~p (Client Looper ~p) is waiting for next TCP chunk...~n", [self(), ClientID]),
 			case gen_tcp:recv(Socket, 0) of
 				{ok, Bin} ->
-					?LOG("~p got a TCP chunk ~p~n", [self(), Bin]),
-					loop(Socket, <<Rest/binary,Bin/binary>>);
-				Any ->
-					?LOG("~p got unexpected TCP chunk: ~p ~n", [self(), Any]),
+					?LOG("~p (Client Looper ~p) got a TCP chunk: ~p~n", [self(), ClientID, Bin]),
+					loop(Socket, Double, ClientID, <<Rest/binary,Bin/binary>>);
+				{error,closed} ->
+					?LOG("~p (Client Looper ~p) is closing connection. ~n", [self(), ClientID]),
+					% TODO: liberate ressources associated with client.
+					ok;
+				{error,Error} ->
+					?LOG("~p (Client Looper ~p) got unexpected TCP error: ~p ~n", [self(), ClientID, Error]),
+					exit({loop_unexpected_msg, Error});
+ 				Any ->
+					?LOG("~p (Client Looper ~p) got unexpected TCP chunk: ~p ~n", [self(), ClientID, Any]),
 					exit({loop_unexpected_msg, Any})
 			end
 	end.
@@ -186,19 +206,23 @@ loop(Socket, Rest) ->
 % Parses any binary request received, determines the correct type of request based on prefix,
 % makes use of dedicated parser for certain request, does the appropriate call and returns the reply as a binary.
 % Returns a '400 Bad Request' binary when the format is not met or the protocol violated.
--spec parse(Request) -> Reply when
+-spec parse(Request, ClientID) -> Reply when
 	Request :: binary(),
-	Reply :: binary().
-parse(Request) -> 
+	Reply :: binary(),
+	ClientID :: integer().
+parse(Request, ClientID) -> 
 	case Request of
 		<<"topic:", Payload/binary>> ->
-			parse_publish(Payload);			
+			?LOG("~p (Client Looper ~p) got publish command, payload: ~p. ~n", [self(), ClientID, Payload]),
+			parse_publish(Payload, ClientID);			
 		<<"subscribe:", Payload/binary>> ->
-			parse_subscribe(Payload);
+			?LOG("~p (Client Looper ~p) got subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
+			parse_subscribe(Payload, ClientID);
 		<<"status">> ->
-			%TODO: handleStatus(Client_ID),
-			<<"Got: status\n">>;
+			?LOG("~p (Client Looper ~p) got status command. ~n", [self(), ClientID]),
+			handleStatus(ClientID);
 		<<"help">> ->
+			?LOG("~p (Client Looper ~p) got help command. ~n", [self(), ClientID]),
 			<<"Welcome! I am a simple MQTT server.\n
 			Allowed commands are: 'topic:', 'subscribe:', 'status' and 'help'\n
 			Simple line-return does nothing and allows multi-line commands and multi-line text body\n
@@ -219,14 +243,16 @@ parse(Request) ->
 			$> subscribe: <topic1> [ , <topic2>, ... ]\n
 			Topics MUST be a on single line.
 			<topicX> MUST not contain commas or line-return, but MAY contains spaces.\n">>;
-		_ -> 
+		_ ->
+			?LOG("~p (Client Looper ~p) got unknown command: ~p. ~n", [self(), ClientID, Request]),
 			bad_request(<<"Command not found: '", Request/binary, "'.">>)
 	end.
 
 % Parse a publish request payload, does the appropriate call and returns the reply.
--spec parse_publish(Payload) -> binary() when
-	Payload :: binary().
-parse_publish(Payload) ->
+-spec parse_publish(Payload, ClientID) -> binary() when
+	Payload :: binary(),
+	ClientID :: integer().
+parse_publish(Payload, ClientID) ->
 	Simple = binary:compile_pattern([<<"\r\n">>, <<"\r">>, <<"\n">>]),
 	% Check the double-line
 	case binary:match(Payload, Simple) of
@@ -248,8 +274,8 @@ parse_publish(Payload) ->
 					case binary:match(Bodydata, <<"body:">>) of
 						{0, L} ->
 							Body = binary:part(Bodydata, L, size(Bodydata) - L),
-							%TODO: handlePublish(Client_ID, Topic, Body),
-							<<"Got: topic: ", Topic/binary, ", body:", Body/binary>>;
+							?LOG("~p (Client Looper ~p) got valid publish command, Topic: ~p, Body: ~p. ~n", [self(), ClientID, Topic, Body]),
+							handlePublish(ClientID, Topic, Body);
 						_ ->
 							bad_request(<<"2nd line of publish command does not comply to body format:
 								$> body: <msg body>
@@ -264,9 +290,10 @@ parse_publish(Payload) ->
 	end.
 
 % Parse a subscribe request payload, does the appropriate call and returns the reply.
--spec parse_subscribe(Payload) -> binary() when
-	Payload :: binary().
-parse_subscribe(Payload) ->
+-spec parse_subscribe(Payload, ClientID) -> binary() when
+	Payload :: binary(),
+	ClientID :: integer().
+parse_subscribe(Payload, ClientID) ->
 	Simple = binary:compile_pattern([<<"\r\n">>, <<"\r">>, <<"\n">>]),
 	% Check the single line.
 	case binary:match(Payload, Simple) of
@@ -276,8 +303,8 @@ parse_subscribe(Payload) ->
 		nomatch ->
 			% Split the whole payload and trim all leading and trailing spaces
 			Topics = binary:split(Payload, <<",">>, [trim_all, global]),
-			%TODO: handleSubscribe(Client_ID, Topics),
-			<<"Got: subscribe: ", Payload/binary>>
+			?LOG("~p (Client Looper ~p) got valid subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
+			handleSubscribe(ClientID, Topics)
 	end.
 
 % Returns a generic 400 Bad Request.
@@ -289,6 +316,7 @@ bad_request() ->
 -spec bad_request(Message) -> binary() when
 	Message :: binary().
 bad_request(Message) ->
+	?LOG("~p got bad_request: ~p. ~n", [self(), Message]),
 	BR = bad_request(),
 	[{verbosity, V}|_] = ets:lookup(options, verbosity),
 	case V of
@@ -301,7 +329,7 @@ bad_request(Message) ->
 	ClientID :: integer(),
 	Reply :: binary().
 handleStatus(ClientID) -> 
-	ok. % status d client
+	<<"ok, got status\n">>. % TODO.status d client
 
 -spec handleSubscribe(ClientID, Topics) -> Reply when
 	ClientID :: integer(),
