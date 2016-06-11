@@ -99,9 +99,11 @@ start_link_internal() ->
 	?LOG("START Controller: trying to start the server.~n"),
 	[{port,Port}|_] = ets:lookup(options, port),
 	[{address,Address}|_] = ets:lookup(options, address),
-	?LOG("Starting on Address: ~p, Port: ~p.~n", [Address, Port]),
-	Listen = gen_tcp:listen(?PORT, [binary, {reuseaddr, true},
-		{active, false}]), 
+	% getaddr(Host, Family) -> {ok, Address} | {error, posix()}
+	{ok, RealAddress} = inet:getaddr(Address, inet),
+	?LOG("Starting on: ~p (~p), Port: ~p.~n", [Address, RealAddress, Port]),
+	Listen = gen_tcp:listen(Port, [binary, {reuseaddr, true},
+		{active, false}, {ifaddr, RealAddress}]), % , {ifaddr, Address}
 	case Listen of 
 		{error, Reason} ->
 			?LOG("START Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
