@@ -6,4 +6,4 @@
 -define(MAX_CLIENTS, 10000).
 % values: none (=quiet), minimal (generic 400 bad request), verbose (full 400 bad request with comments)
 -define(VERBOSITY, none).
--define(LOGS, false).
+-define(LOGS, true).

@@ -1,14 +1,10 @@
 %%
-%% Sequential echo server.
+%% Parralel micro-MQTT server.
 %%
 -module(micromq).
 
 %% API
 -export([start_link/0, start_link/1, stop/0]).
--export([handleSubscribe/2, handlePublish/3]). % temporary
-% NOT API, for spawn.
--export([worker/2]).
-
 -include("micromq.hrl").
 
 
@@ -61,6 +57,9 @@ start_link(Options) ->
 %% ===================================================================
 %% Private functions.
 %% ===================================================================
+
+%% Logs utilities, to easily disable/enable logs (to be used instead of io:format()!)
+%% ===================================================================
 -spec log(Fmt) -> ok when
 	Fmt :: io:format().
 log(Fmt) ->
@@ -77,6 +76,9 @@ log(Fmt, Args)->
 			ok % keep quiet
 	end.
 
+%% Start-up option helpers (create option set, handle custum option)
+%% ===================================================================
+
 % Creates a default set of options with the macros (only if no server runninh yet).
 -spec create_options() -> ok.
 create_options() ->
@@ -90,8 +92,7 @@ create_options() ->
 			ets:insert(options, {port, ?PORT}),
 			ets:insert(options, {max_topics, ?MAX_TOPICS}),
 			ets:insert(options, {max_clients, ?MAX_CLIENTS}),
-			ets:insert(options, {verbosity, ?VERBOSITY}),
-			ets:insert(options, {logs, ?LOGS});
+			ets:insert(options, {verbosity, ?VERBOSITY});
 		_ -> % server already running -> abort.
 			ok
 	end,
@@ -110,6 +111,8 @@ handle_options(Options) ->
 			handle_options(T)
 	end.
 
+%% Internal start-up function and initializer of internal structures
+%% ===================================================================
 -spec start_link_internal() -> ok | {error, Reason} when
 	Reason :: system_limit | inet:posix().
 start_link_internal() ->
@@ -141,6 +144,8 @@ start_link_internal() ->
 			ok
 	end.
 
+%% Server code: top-supervisor process (spawn the Acceptor and handles tear-down)
+%% ===================================================================
 -spec server(LSocket) -> ok when
 	LSocket:: inet:socket().
 server(LSocket) ->
@@ -165,8 +170,8 @@ server(LSocket) ->
 			exit({server_unexpected_msg, Any})
 	end.
 
-% ACCEPTOR OF NEW CONNECTION 
-% infinite loop that accepts new clients
+%% ACCEPTOR of New Connections : infinite loop that accepts new clients
+%% ===================================================================
 -spec accept(LSocket, ClientID) -> no_return() when
 	LSocket :: inet:socket(),
 	ClientID :: integer().
@@ -175,12 +180,13 @@ accept(LSocket, ClientID) ->
 	% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
 	ets:insert(clients_records, {ClientID, Socket, [], [], 0, 0}),
 	log("~p (Acceptor) got a new client with ID: ~p~n", [self(), ClientID]),
-	Pid = spawn(?MODULE, worker, [Socket, ClientID]),
+	%Pid = spawn(?MODULE, worker, [Socket, ClientID]),
+	Pid = spawn_link(fun() -> worker(Socket, ClientID) end),
 	log("Pid: ~p~n", [Pid]),
 	accept(LSocket, ClientID + 1).
 
-% CLIENT WORKER
-% Initiate client and calls the looper.
+%% CLIENT WORKER : Initiate client and calls the looper.
+%% ===================================================================
 -spec worker(Socket, ClientID) -> ok when
 	Socket :: inet:socket(),
 	ClientID :: integer().
@@ -191,8 +197,8 @@ worker(Socket, ClientID) ->
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
 	loop(Socket, Double, ClientID, <<>>).
 
-% CLIENT LOOPER
-% infinite loop that listen to clients message.
+%% CLIENT LOOPER : infinite loop that listen to clients message.
+%% ===================================================================
 -spec loop(Socket, Double, ClientID, Rest) -> ok when
 	Socket :: inet:socket(), 
 	Double :: binary(),
@@ -239,6 +245,9 @@ loop(Socket, Double, ClientID, Rest) ->
 					exit({loop_unexpected_msg, Any})
 			end
 	end.
+
+%% PARSING METHODS
+%% ===================================================================
 
 % Parses any binary request received, determines the correct type of request based on prefix,
 % makes use of dedicated parser for certain request, does the appropriate call and returns the reply as a binary.
@@ -343,6 +352,8 @@ parse_subscribe(Payload, ClientID) ->
 			handleSubscribe(ClientID, Payload)
 	end.
 
+%% Bad request Helpers, according to parameters (Verbosity)
+%% ===================================================================
 % Returns a generic 400 Bad Request.
 -spec bad_request() -> binary().
 bad_request() ->
@@ -364,6 +375,10 @@ bad_request(Message) ->
 			<<BR/binary, "Enter 'help' for indications.\nMessage : ", Message/binary, "\n\n">>
 	end.
 
+%% HANDLER METHODS : 1 handler for each type of commands
+%% ===================================================================
+
+% Handle the status command and returns its status reply as binary.
 -spec handleStatus(ClientID) -> Reply when
 	ClientID :: integer(),
 	Reply :: binary().
@@ -383,6 +398,7 @@ handleStatus(ClientID) ->
 	"\nreceived messages: ", NbR/binary,
 	"\nsent messages: ", NbS/binary, "\n\n">>. 
 
+% Handle the subscribe command, subscribe the client to the topics and returns its confirmation reply as binary.
 -spec handleSubscribe(ClientID, Topics) -> Reply when
 	ClientID :: integer(),
 	Topics :: list(),
@@ -398,6 +414,7 @@ handleSubscribe(ClientID, Topics) ->
 	ets:insert(clients_records, {ClientID, Socket, NewTopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}),
 	<<"subscribed: ", Topics/binary, "\n\n">>.
 
+% Handle the publush command, forward the message to all subscribed clients, and returns its confirmation reply as binary.
 -spec handlePublish(ClientID, Topic, Message) -> Reply when
 	ClientID :: integer(),
 	Topic :: binary(),
@@ -415,6 +432,10 @@ handlePublish(ClientID, Topic, Message) ->
 
 	[distribute(ClientIDDest, Data) || {_, ClientIDDest} <- Clients],
 	log("~p (Client Publish ~p) sent message to subscribers of ~p. ~n", [self(), ClientID, Topic]),
+
+	% Distribute to wildcard clients.
+	ClientsStar = ets:lookup(clients_by_topic, <<"*">>),
+	[distribute(ClientIDDest, Data) || {_, ClientIDDest} <- ClientsStar],
 	
 	% Update record of sender: [TopicPublished] prefixed by the new topic, NbMsgSent (increment)
 	ClientRecord = ets:lookup(clients_records, ClientID),
