@@ -35,10 +35,10 @@ stop() ->
 		_ -> 
 			% Liberate the ressources used by the server.
 			unregister(server),
+			Pid ! stop,
 			ets:delete(clients_by_topic),
 			ets:delete(clients_records),
 			ets:delete(options),
-			Pid ! stop,
 			?LOG("STOP Controller: server stopped and data structure liberated.~n")
 	end.
 
@@ -171,7 +171,7 @@ accept(LSocket, ClientID) ->
 worker(Socket, ClientID) ->
 	?LOG("~p (Worker) started for client with ID: ~p~n", [self(), ClientID]),
 	Cid = integer_to_binary(ClientID),
-	gen_tcp:send(Socket, <<"client_id: ", Cid/binary, "\n">>), %ClientID/integer, % TODO check format of integer
+	gen_tcp:send(Socket, <<"client_id: ", Cid/binary, "\n">>),
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
 	loop(Socket, Double, ClientID, <<>>).
 
@@ -199,8 +199,21 @@ loop(Socket, Double, ClientID, Rest) ->
 					?LOG("~p (Client Looper ~p) got a TCP chunk: ~p~n", [self(), ClientID, Bin]),
 					loop(Socket, Double, ClientID, <<Rest/binary,Bin/binary>>);
 				{error,closed} ->
-					?LOG("~p (Client Looper ~p) is closing connection. ~n", [self(), ClientID]),
-					% TODO: liberate ressources associated with client.
+					% Clean up all ressources associated to the client.
+					% Try-catch because this {error,closed} may happen in 2 situations:
+					% 1. client disconnect: it will be successful (and server won't have client data anymore)
+					% 2. server is tear down: it will fail (but we dont care, server tear down will erase everything)
+					try 
+						Record = ets:lookup(clients_records, ClientID),
+						?LOG("~p (Client Looper ~p) is closing connection... ~n", [self(), ClientID]),
+						% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
+						[{ClientID, _, TopicSubscribed, _, _, _}|_] = Record,
+						[ets:delete_object(clients_by_topic, {Topic, ClientID}) || Topic <- TopicSubscribed],
+						ets:delete(clients_records, ClientID),
+						?LOG("~p (Client Looper ~p) closed connection (ressources liberated). ~n", [self(), ClientID])
+					catch
+						error:_ -> ok
+					end,
 					ok;
 				{error,Error} ->
 					?LOG("~p (Client Looper ~p) got unexpected TCP error: ~p ~n", [self(), ClientID, Error]),
