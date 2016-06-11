@@ -36,6 +36,7 @@ stop() ->
 			% Liberate the ressources used by the server.
 			unregister(server),
 			ets:delete(clients_by_topic),
+			ets:delete(clients_records),
 			ets:delete(options),
 			Pid ! stop,
 			?LOG("STOP Controller: server stopped and data structure liberated.~n")
@@ -69,7 +70,7 @@ create_options() ->
 	case Server of
 		% Server not running -> proceed.
 		undefined ->
-			ets:new(options, [set, named_table]),
+			ets:new(options, [set, named_table, protected]), %explicitely protected
 			ets:insert(options, {address, ?ADDRESS}),
 			ets:insert(options, {port, ?PORT}),
 			ets:insert(options, {max_topics, ?MAX_TOPICS}),
@@ -109,10 +110,14 @@ start_link_internal() ->
 			?LOG("START Controller: coudln't start the server. Do you already have a running instance? Try to stop it first~n"),
 			{error, Reason};
 		{ok, LSocket} ->
+			% Tables are public because all processes may add data!
 			% Create the tables that contain:
 			% - clients_by_topic: a bag of {Topic, ClientID}. Lists all ClientID
 			%   matching a given topic
-			ets:new(clients_by_topic, [bag, named_table]),
+			ets:new(clients_by_topic, [bag, named_table, public]),
+			% Clients Records: a set of {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
+			ets:new(clients_records, [set, named_table, public]),
+
 			Pid = spawn_link(fun() -> server(LSocket) end),
 			gen_tcp:controlling_process(LSocket, Pid),
 			register(server, Pid),
@@ -151,6 +156,8 @@ server(LSocket) ->
 	ClientID :: integer().
 accept(LSocket, ClientID) ->
 	{ok, Socket} = gen_tcp:accept(LSocket), % WARNING Blocking!
+	% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
+	ets:insert(clients_records, {ClientID, Socket, [], [], 0, 0}),
 	?LOG("~p (Acceptor) got a new client with ID: ~p~n", [self(), ClientID]),
 	Pid = spawn(?MODULE, worker, [Socket, ClientID]),
 	?LOG("Pid: ~p~n", [Pid]),
@@ -163,7 +170,8 @@ accept(LSocket, ClientID) ->
 	ClientID :: integer().
 worker(Socket, ClientID) ->
 	?LOG("~p (Worker) started for client with ID: ~p~n", [self(), ClientID]),
-	gen_tcp:send(Socket, <<"client_id: ", "\n">>), %ClientID/integer, % TODO check format of integer
+	Cid = integer_to_binary(ClientID),
+	gen_tcp:send(Socket, <<"client_id: ", Cid/binary, "\n">>), %ClientID/integer, % TODO check format of integer
 	Double = binary:compile_pattern([<<"\r\n\r\n">>, <<"\r\r">>, <<"\n\n">>]),
 	loop(Socket, Double, ClientID, <<>>).
 
@@ -275,7 +283,8 @@ parse_publish(Payload, ClientID) ->
 						{0, L} ->
 							Body = binary:part(Bodydata, L, size(Bodydata) - L),
 							?LOG("~p (Client Looper ~p) got valid publish command, Topic: ~p, Body: ~p. ~n", [self(), ClientID, Topic, Body]),
-							handlePublish(ClientID, Topic, Body);
+							[TopicTrimmed|_] = Topics,
+							handlePublish(ClientID, TopicTrimmed, Body);
 						_ ->
 							bad_request(<<"2nd line of publish command does not comply to body format:
 								$> body: <msg body>
@@ -301,10 +310,8 @@ parse_subscribe(Payload, ClientID) ->
 			bad_request(<<"subscribe command items MUST be on a single line.
 				$> subscribe: <topic1> [ , <topic2>, ... ]">>);
 		nomatch ->
-			% Split the whole payload and trim all leading and trailing spaces
-			Topics = binary:split(Payload, <<",">>, [trim_all, global]),
 			?LOG("~p (Client Looper ~p) got valid subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
-			handleSubscribe(ClientID, Topics)
+			handleSubscribe(ClientID, Payload)
 	end.
 
 % Returns a generic 400 Bad Request.
@@ -329,25 +336,68 @@ bad_request(Message) ->
 	ClientID :: integer(),
 	Reply :: binary().
 handleStatus(ClientID) -> 
-	<<"ok, got status\n">>. % TODO.status d client
+	% {ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}
+	ClientRecord = ets:lookup(clients_records, ClientID),
+	[{ClientID, _ , TopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}] = ClientRecord,
+	?LOG("~p (Client Status ~p) got: rcv: ~p, sent: ~p. ~n", [self(), ClientID, NbMsgReceived, NbMsgSent]),
+	Cid = integer_to_binary(ClientID),
+	NbR = integer_to_binary(NbMsgReceived),
+	NbS = integer_to_binary(NbMsgSent),
+	TopS = list_to_binary(TopicSubscribed),
+	TopP = list_to_binary(TopicPublished),
+	<<"status for client ", Cid/binary,
+	":\nsubscribed topics: ", TopS/binary,
+	"\npublished topics: ", TopP/binary,
+	"\nreceived messages: ", NbR/binary,
+	"\nsent messages: ", NbS/binary, "\n\n">>. 
 
 -spec handleSubscribe(ClientID, Topics) -> Reply when
 	ClientID :: integer(),
 	Topics :: list(),
 	Reply :: binary().
 handleSubscribe(ClientID, Topics) ->
+	% Split the whole payload and trim all leading and trailing spaces
+	TopicsList = binary:split(Topics, <<",">>, [trim_all, global]),
 	% Insert ClientID in all topics he subscribes to
-	ets:insert(clients_by_topic, [ {Topic, ClientID} || Topic <- Topics]),
-	<<"ok">>.
+	ets:insert(clients_by_topic, [ {Topic, ClientID} || Topic <- TopicsList]),
+	ClientRecord = ets:lookup(clients_records, ClientID),
+	[{ClientID, Socket , TopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}] = ClientRecord,
+	NewTopicSubscribed = lists:append(TopicsList, TopicSubscribed),
+	ets:insert(clients_records, {ClientID, Socket, NewTopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}),
+	<<"subscribed: ", Topics/binary, "\n\n">>.
 
 -spec handlePublish(ClientID, Topic, Message) -> Reply when
 	ClientID :: integer(),
 	Topic :: binary(),
 	Message :: binary(),
 	Reply :: binary().
-
 handlePublish(ClientID, Topic, Message) ->
+	Cid = integer_to_binary(ClientID),
+	Data = <<"from: ", Cid/binary,
+	"\ntopic: ", Topic/binary,
+	"\nbody:", Message/binary, "\n\n">>,
 	% Retrieve list of clients from that topic
 	Clients = ets:lookup(clients_by_topic, Topic),
 	io:format("~p~n", [Clients]),
-	<<"ok">>.
+	?LOG("~p (Client Publish ~p) sent message to subscribers: ~p.~n", [self(), ClientID, [Clients]]),
+
+	[distribute(ClientIDDest, Data) || {_, ClientIDDest} <- Clients],
+	?LOG("~p (Client Publish ~p) sent message to subscribers of ~p. ~n", [self(), ClientID, Topic]),
+	
+	% Update record of sender: [TopicPublished] prefixed by the new topic, NbMsgSent (increment)
+	ClientRecord = ets:lookup(clients_records, ClientID),
+	[{ClientID, Socket, TopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}] = ClientRecord,
+	ets:insert(clients_records, {ClientID, Socket, TopicSubscribed, [Topic|TopicPublished], NbMsgReceived, NbMsgSent+1}),
+	
+	<<"accepted: ", Topic/binary, "\n\n">>.
+
+% Retreive the client record for its Socket (to send the data) and its NbMsgReceived (to increment and update record)
+-spec distribute(ClientIDRecipient, Data) -> ok when
+	ClientIDRecipient :: integer(),
+	Data :: binary().
+distribute(ClientIDRecipient, Data) ->
+	ClientRecord = ets:lookup(clients_records, ClientIDRecipient),
+	[{ClientIDRecipient, Socket, TopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}|_] = ClientRecord,
+	gen_tcp:send(Socket, Data),
+	ets:insert(clients_records, {ClientIDRecipient, Socket, TopicSubscribed, TopicPublished, NbMsgReceived+1, NbMsgSent}),
+	ok.

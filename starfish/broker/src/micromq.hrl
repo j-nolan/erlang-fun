@@ -4,6 +4,7 @@
 -define(PORT, 5017).
 -define(MAX_TOPICS, 10000).
 -define(MAX_CLIENTS, 10000).
+% values: none, minimal, verbose, logs
 -define(VERBOSITY, true).
 
 -define(LOG(Fmt), io:format(Fmt)).
