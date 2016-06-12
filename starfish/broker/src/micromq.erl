@@ -325,7 +325,7 @@ parse_publish(Payload, ClientID) ->
 			% Extract the first line
 			Topic = binary:part(Payload, 0, Start),
 			% Checks the first line is a single item (no commas), by splitting globally and check the length is 0.
-			Topics = binary:split(Payload, <<",">>, [trim_all, global]),
+			Topics = binary:split(Topic, <<",">>, [trim_all, global]),
 			case length(Topics) of
 				1 ->
 					% Extract the second line
