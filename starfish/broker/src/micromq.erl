@@ -324,8 +324,8 @@ parse_publish(Payload, ClientID) ->
 		{Start, Len} ->
 			% Extract the first line
 			Topic = binary:part(Payload, 0, Start),
-			% Checks the first line is a single item (no commas), by splitting globally and check the length is 0.
-			Topics = binary:split(Topic, <<",">>, [trim_all, global]),
+			% Checks the first line is a single item (no commas), by splitting globally and check the length is 1.
+			Topics = split_and_trim(Topic),
 			case length(Topics) of
 				1 ->
 					% Extract the second line
@@ -366,6 +366,19 @@ parse_subscribe(Payload, ClientID) ->
 			log("~p (Client Looper ~p) got valid subscribe command, payload: ~p. ~n", [self(), ClientID, Payload]),
 			handleSubscribe(ClientID, Payload)
 	end.
+
+% remove whole string trailing and leading spaces, 
+% then matches "_*,_*" (comma-separated, trimming leading/trailing spaces)
+% "  hello world,bli bla   ,  accept    " -> ["hello world", "bli bla", "accept"]
+-spec split_and_trim(TopicsPayload) -> TopicsTrimmed when
+	TopicsPayload :: binary(),
+	TopicsTrimmed :: list().
+split_and_trim(TopicsPayload) ->
+	T = binary_to_list(TopicsPayload),
+	T1 = re:replace(T, "^ *", "", [global, {return, binary}]),
+	T2 = re:replace(T1, " *$", "", [global, {return, binary}]),
+	T3 = re:replace(T2, " *, *", ",", [global, {return, binary}]),
+	binary:split(T3, <<",">>, [trim_all, global]).
 
 %% Bad request Helpers, according to parameters (Verbosity)
 %% ===================================================================
@@ -416,18 +429,18 @@ handleStatus(ClientID) ->
 % Handle the subscribe command, subscribe the client to the topics and returns its confirmation reply as binary.
 -spec handleSubscribe(ClientID, Topics) -> Reply when
 	ClientID :: integer(),
-	Topics :: list(),
+	Topics :: binary(),
 	Reply :: binary().
 handleSubscribe(ClientID, Topics) ->
 	% Split the whole payload and trim all leading and trailing spaces
-	TopicsList = binary:split(Topics, <<",">>, [trim_all, global]),
+	TopicsList = split_and_trim(Topics),
 	% Insert ClientID in all topics he subscribes to
 	ets:insert(clients_by_topic, [ {Topic, ClientID} || Topic <- TopicsList]),
 	ClientRecord = ets:lookup(clients_records, ClientID),
 	[{ClientID, Socket , TopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}] = ClientRecord,
 	NewTopicSubscribed = lists:append(TopicsList, TopicSubscribed),
 	ets:insert(clients_records, {ClientID, Socket, NewTopicSubscribed, TopicPublished, NbMsgReceived, NbMsgSent}),
-	<<"subscribed: ", Topics/binary, "\n\n">>.
+	<<"subscribed:", Topics/binary, "\n\n">>.
 
 % Handle the publush command, forward the message to all subscribed clients, and returns its confirmation reply as binary.
 -spec handlePublish(ClientID, Topic, Message) -> Reply when

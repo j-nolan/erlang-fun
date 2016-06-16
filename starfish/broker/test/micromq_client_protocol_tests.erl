@@ -170,7 +170,7 @@ tests_subscribe(Sockets) ->
 	[Socket|_] = Sockets,
 	gen_tcp:send(Socket, <<"subscribe: hello\n\n">>),
 	{ok, Reply, _} = receive_line(Socket),
-	[?_assertEqual(<<"subscribed:  hello">>, Reply)]. %TODO: remove a space!
+	[?_assertEqual(<<"subscribed: hello">>, Reply)]. 
 
 subscribe_test_() ->
 	{setup, 
@@ -201,9 +201,9 @@ tests_subscribe_status(Sockets) ->
 	gen_tcp:send(Socket, <<"status\n\n">>),
 	{ok, L1, R} = receive_line(Socket),
 	[L2 | [L3 | [L4 | [L5|_]]]] = binary:split(R, [<<"\n">>], [global]), 
-	[?_assertEqual(<<"subscribed:  hello">>, Reply), %TODO: remove a space!
+	[?_assertEqual(<<"subscribed: hello">>, Reply), 
 	?_assertEqual(<<"status for client 1:">>, L1),
-	?_assertEqual(<<"subscribed topics:  hello">>, L2), %TODO: remove a space!
+	?_assertEqual(<<"subscribed topics: hello">>, L2), 
 	?_assertEqual(<<"published topics: ">>, L3), 
 	?_assertEqual(<<"received messages: 0">>, L4),
 	?_assertEqual(<<"sent messages: 0">>, L5)].
@@ -218,9 +218,9 @@ subscribe_status_test_() ->
 %% ===================================================================
 tests_publish(Sockets) ->
 	[Socket|_] = Sockets,
-	gen_tcp:send(Socket, <<"topic: hello1\nbody: message\n\n">>),
+	gen_tcp:send(Socket, <<"topic:   hello1   \nbody: message\n\n">>),
 	{ok, Reply, _} = receive_line(Socket),
-	[?_assertEqual(<<"accepted:  hello1">>, Reply)]. %TODO: remove a space!
+	[?_assertEqual(<<"accepted: hello1">>, Reply)]. 
 
 publish_test_() ->
 	{setup, 
@@ -283,10 +283,10 @@ tests_publish_status(Sockets) ->
 	gen_tcp:send(Socket, <<"status\n\n">>),
 	{ok, L1, R} = receive_line(Socket),
 	[L2 | [L3 | [L4 | [L5|_]]]] = binary:split(R, [<<"\n">>], [global]), 
-	[?_assertEqual(<<"accepted:  hello">>, Reply), %TODO: remove a space!
+	[?_assertEqual(<<"accepted: hello">>, Reply), 
 	?_assertEqual(<<"status for client 1:">>, L1),
 	?_assertEqual(<<"subscribed topics: ">>, L2),
-	?_assertEqual(<<"published topics:  hello">>, L3), %TODO: remove a space!
+	?_assertEqual(<<"published topics: hello">>, L3), 
 	?_assertEqual(<<"received messages: 0">>, L4),
 	?_assertEqual(<<"sent messages: 1">>, L5)].
 
@@ -344,10 +344,10 @@ tests_subscribe_publish(Sockets) ->
 	[L2 | [L3 | [L4 | [L5|_]]]] = binary:split(R, [<<"\n">>], [global]), 
 
 	[?_assertEqual(<<"from: 2">>, R1),
-	?_assertEqual(<<"topic:  hello">>, R2),  %TODO: remove a space!
+	?_assertEqual(<<"topic: hello">>, R2),  
 	?_assertEqual(<<"body: message">>, R3),
 	?_assertEqual(<<"status for client 1:">>, L1),
-	?_assertEqual(<<"subscribed topics:  hello">>, L2), %TODO: remove a space!
+	?_assertEqual(<<"subscribed topics: hello">>, L2), 
 	?_assertEqual(<<"published topics: ">>, L3),
 	?_assertEqual(<<"received messages: 1">>, L4),
 	?_assertEqual(<<"sent messages: 0">>, L5)].
@@ -380,10 +380,10 @@ tests_subscribe_star_publish(Sockets) ->
 	[L2 | [L3 | [L4 | [L5|_]]]] = binary:split(R, [<<"\n">>], [global]), 
 
 	[?_assertEqual(<<"from: 2">>, R1),
-	?_assertEqual(<<"topic:  hello">>, R2),  %TODO: remove a space!
+	?_assertEqual(<<"topic: hello">>, R2),  
 	?_assertEqual(<<"body: message">>, R3),
 	?_assertEqual(<<"status for client 1:">>, L1),
-	?_assertEqual(<<"subscribed topics: *">>, L2), %TODO: remove a space!
+	?_assertEqual(<<"subscribed topics: *">>, L2), 
 	?_assertEqual(<<"published topics: ">>, L3),
 	?_assertEqual(<<"received messages: 1">>, L4),
 	?_assertEqual(<<"sent messages: 0">>, L5)].
