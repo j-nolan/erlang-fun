@@ -1,0 +1,542 @@
+<!DOCTYPE html><html>
+
+<head>
+<meta charset="utf-8">
+<title>README</title>
+<style type="text/css">
+body {
+  font-family: Helvetica, arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: white;
+  padding: 30px; }
+
+body > *:first-child {
+  margin-top: 0 !important; }
+body > *:last-child {
+  margin-bottom: 0 !important; }
+
+a {
+  color: #4183C4; }
+a.absent {
+  color: #cc0000; }
+a.anchor {
+  display: block;
+  padding-left: 30px;
+  margin-left: -30px;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0; }
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 20px 0 10px;
+  padding: 0;
+  font-weight: bold;
+  -webkit-font-smoothing: antialiased;
+  cursor: text;
+  position: relative; }
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+  text-decoration: none; }
+
+h1 tt, h1 code {
+  font-size: inherit; }
+
+h2 tt, h2 code {
+  font-size: inherit; }
+
+h3 tt, h3 code {
+  font-size: inherit; }
+
+h4 tt, h4 code {
+  font-size: inherit; }
+
+h5 tt, h5 code {
+  font-size: inherit; }
+
+h6 tt, h6 code {
+  font-size: inherit; }
+
+h1 {
+  font-size: 28px;
+  color: black; }
+
+h2 {
+  font-size: 24px;
+  border-bottom: 1px solid #cccccc;
+  color: black; }
+
+h3 {
+  font-size: 18px; }
+
+h4 {
+  font-size: 16px; }
+
+h5 {
+  font-size: 14px; }
+
+h6 {
+  color: #777777;
+  font-size: 14px; }
+
+p, blockquote, ul, ol, dl, li, table, pre {
+  margin: 15px 0; }
+
+hr {
+  background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+  border: 0 none;
+  color: #cccccc;
+  height: 4px;
+  padding: 0;
+}
+
+body > h2:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+body > h1:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+  body > h1:first-child + h2 {
+    margin-top: 0;
+    padding-top: 0; }
+body > h3:first-child, body > h4:first-child, body > h5:first-child, body > h6:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+  margin-top: 0;
+  padding-top: 0; }
+
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+  margin-top: 0; }
+
+li p.first {
+  display: inline-block; }
+li {
+  margin: 0; }
+ul, ol {
+  padding-left: 30px; }
+
+ul :first-child, ol :first-child {
+  margin-top: 0; }
+
+dl {
+  padding: 0; }
+  dl dt {
+    font-size: 14px;
+    font-weight: bold;
+    font-style: italic;
+    padding: 0;
+    margin: 15px 0 5px; }
+    dl dt:first-child {
+      padding: 0; }
+    dl dt > :first-child {
+      margin-top: 0; }
+    dl dt > :last-child {
+      margin-bottom: 0; }
+  dl dd {
+    margin: 0 0 15px;
+    padding: 0 15px; }
+    dl dd > :first-child {
+      margin-top: 0; }
+    dl dd > :last-child {
+      margin-bottom: 0; }
+
+blockquote {
+  border-left: 4px solid #dddddd;
+  padding: 0 15px;
+  color: #777777; }
+  blockquote > :first-child {
+    margin-top: 0; }
+  blockquote > :last-child {
+    margin-bottom: 0; }
+
+table {
+  padding: 0;border-collapse: collapse; }
+  table tr {
+    border-top: 1px solid #cccccc;
+    background-color: white;
+    margin: 0;
+    padding: 0; }
+    table tr:nth-child(2n) {
+      background-color: #f8f8f8; }
+    table tr th {
+      font-weight: bold;
+      border: 1px solid #cccccc;
+      margin: 0;
+      padding: 6px 13px; }
+    table tr td {
+      border: 1px solid #cccccc;
+      margin: 0;
+      padding: 6px 13px; }
+    table tr th :first-child, table tr td :first-child {
+      margin-top: 0; }
+    table tr th :last-child, table tr td :last-child {
+      margin-bottom: 0; }
+
+img {
+  max-width: 100%; }
+
+span.frame {
+  display: block;
+  overflow: hidden; }
+  span.frame > span {
+    border: 1px solid #dddddd;
+    display: block;
+    float: left;
+    overflow: hidden;
+    margin: 13px 0 0;
+    padding: 7px;
+    width: auto; }
+  span.frame span img {
+    display: block;
+    float: left; }
+  span.frame span span {
+    clear: both;
+    color: #333333;
+    display: block;
+    padding: 5px 0 0; }
+span.align-center {
+  display: block;
+  overflow: hidden;
+  clear: both; }
+  span.align-center > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px auto 0;
+    text-align: center; }
+  span.align-center span img {
+    margin: 0 auto;
+    text-align: center; }
+span.align-right {
+  display: block;
+  overflow: hidden;
+  clear: both; }
+  span.align-right > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px 0 0;
+    text-align: right; }
+  span.align-right span img {
+    margin: 0;
+    text-align: right; }
+span.float-left {
+  display: block;
+  margin-right: 13px;
+  overflow: hidden;
+  float: left; }
+  span.float-left span {
+    margin: 13px 0 0; }
+span.float-right {
+  display: block;
+  margin-left: 13px;
+  overflow: hidden;
+  float: right; }
+  span.float-right > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px auto 0;
+    text-align: right; }
+
+code, tt {
+  margin: 0 2px;
+  padding: 0 5px;
+  white-space: nowrap;
+  border: 1px solid #eaeaea;
+  background-color: #f8f8f8;
+  border-radius: 3px; }
+
+pre code {
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  border: none;
+  background: transparent; }
+
+.highlight pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+
+pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+  pre code, pre tt {
+    background-color: transparent;
+    border: none; }
+
+sup {
+    font-size: 0.83em;
+    vertical-align: super;
+    line-height: 0;
+}
+* {
+	-webkit-print-color-adjust: exact;
+}
+@media screen and (min-width: 914px) {
+    body {
+        width: 854px;
+        margin:0 auto;
+    }
+}
+@media print {
+	table, pre {
+		page-break-inside: avoid;
+	}
+	pre {
+		word-wrap: break-word;
+	}
+}
+</style>
+</head>
+<body>
+<h1 id="toc_0">Micro-MQ</h1>
+
+<p><strong>A Micro <a href="https://en.wikipedia.org/wiki/MQTT">MQTT broker</a> implemented in Erlang</strong>, following the given <a href="specification.pdf">specification</a>.</p>
+
+<p>Lab of MCS Modern Concurrent Systems class at HEIG-VD, Switzerland, 2016, with prof. <a href="https://bitbucket.org/marco_m">Marco Molteni</a>.</p>
+
+<p>Authors: <a href="https://github.com/melhk/">Mélanie Huck</a>, <a href="https://github.com/j-nolan/">Jim Nolan</a>, <a href="https://github.com/ValentinMinder">Valentin Minder</a>, on our <a href="https://github.com/j-nolan/erlang-fun">git repository</a>.</p>
+
+<h2 id="toc_1">Usage</h2>
+
+<h3 id="toc_2">Setup</h3>
+
+<p>This programs has two dependencies:</p>
+
+<ul>
+<li><a href="https://bitbucket.org/marco_m/reloader"><code>reloader</code></a> watches compiled sources and automatically reloads them in the erlang shell whenever they are changed</li>
+<li><a href="https://github.com/eproxus/meck.git"><code>meck</code></a> is a mocking library for Erlang. (Note: do we really need it?)</li>
+</ul>
+
+<p>To setup those dependencies, type from the server&#39;s directory:</p>
+
+<ul>
+<li><code>rebar get-deps</code> (retrieve dependencies)</li>
+<li><code>rebar update-deps</code> (update dependencies)</li>
+</ul>
+
+<h3 id="toc_3">Simple compilation</h3>
+
+<p>With this method, you need to repeat steps 2 and 3 every time you edit the sources.</p>
+
+<ol>
+<li>Launch your terminal in the server&#39;s directory</li>
+<li>Compile sources: <code>rebar compile</code></li>
+<li>Run program: <code>erl -pa ebin</code></li>
+</ol>
+
+<h3 id="toc_4">Automatic reloading</h3>
+
+<p>With this method, whenever the sources are recompiled, the code is reloaded in the erlang shell using the <code>reloader</code> dependency.</p>
+
+<ol>
+<li>Launch your terminal in the server&#39;s directory</li>
+<li>Compile sources: <code>rebar compile</code> </li>
+<li>Run program with the reloader (2 seconds refresh): <code>erl -pa ebin -pa deps/*/ebin -run reloader start 2</code></li>
+</ol>
+
+<h2 id="toc_5">API</h2>
+
+<h3 id="toc_6"><code>start_link</code></h3>
+
+<p>Spawns the server. The server in its turn spawn an acceptor process that will listen for new tcp connexions. Whenever a new client connects, the acceptor process spawns a worker process.</p>
+
+<p>It supports the following options:</p>
+
+<div><pre><code class="language-none">micromq:start_link([
+{max_clients, 10000}, 
+{max_topics, 10000}, 
+{address, localhost}, 
+{port, 5017}
+{verbosity, verbose}
+])</code></pre></div>
+
+<p>Changing the port, the address and the verbosity works. However, max<em>clients and max</em>topics are not used.</p>
+
+<h3 id="toc_7"><code>stop</code></h3>
+
+<p>Retrieves the PID of the listener process and sends him a <code>stop</code> message.</p>
+
+<h2 id="toc_8">Protocol</h2>
+
+<p>It is text-based protocol, with double line-return being the <em>commit</em> indicator. To connect type <code>telnet localhost 5017</code> or <code>telnet &lt;host&gt; &lt;port&gt;</code>. Upon connection client recieve their ID <code>client_id: &lt;ID&gt;</code>. </p>
+
+<p>Welcome! I am a simple MQTT server.
+Allowed commands are: <code>topic:</code>, <code>subscribe:</code>, <code>status</code> and <code>help</code>.
+Simple line-return does nothing and allows multi-line commands and multi-line text body. Double line-return commits your command to the server. Warning: all commands headers are case-sensitive!</p>
+
+<h3 id="toc_9">Status &amp; Help</h3>
+
+<p>The <code>status</code> command replies with the current state of the client.</p>
+
+<p>The <code>help</code> command display the documentation to the client.</p>
+
+<h3 id="toc_10">Subscribe:</h3>
+
+<p>The <code>subscribe</code> command subscribes the clients to all the topics given, and confirms. From now on, the client will recieve all messages sent to this topic.</p>
+
+<p>Format:</p>
+
+<div><pre><code class="language-none">subscribe: &lt;topic1&gt; [ , &lt;topic2&gt;, ... ]</code></pre></div>
+
+<ul>
+<li>Topics MUST be a on single line.</li>
+<li><code>&lt;topicX&gt;</code> MUST not contain commas or line-return, but MAY contains spaces.\n&quot;&gt;&gt;</li>
+<li>There is a special topic <code>*</code>. Subscribing to this will cause all futher messages to be recieved.</li>
+<li><p>The client record is updated: the list of new topics subscribed is appended to the TopicSubscribed list.</p></li>
+<li><p>It is not precised in the specification what should happen if a client subscribes twice to the same topic. For simplicity we chooses to subscribe him twice.</p></li>
+<li><p>There is no way to unsubscribe, it is not asked in the specification. However, there is no persistence, and the client may disconnect to remove all the data.</p></li>
+</ul>
+
+<h3 id="toc_11">Publish (topic)</h3>
+
+<p>The <em>publish</em> command allows to write a message (the <code>body</code>) on a <code>topic</code>, and confirms. The message will be forwarded to all clients subscribed to this <code>topic</code>, and to all clients subscribed to the special topic <code>*</code>.</p>
+
+<p>Format:</p>
+
+<div><pre><code class="language-none">topic: &lt;topic name&gt;
+body: &lt;msg body&gt;</code></pre></div>
+
+<ul>
+<li>This command MUST contain at least 2 lines, the first for <code>topic:</code>, the second for <code>body:</code></li>
+<li><code>&lt;topic name&gt;</code> MUST not contain commas or line-return, but MAY contains spaces.</li>
+<li><code>&lt;msg body&gt;</code> MAY be any text and contain single line-return and commas.</li>
+<li>It will update the <code>NbMsgSent</code> and <code>TopicPublished</code> of the client record of the sender.</li>
+<li><p>It will update the <code>NbMsgRecieved</code> of the client record of all the recievers.</p></li>
+<li><p>It is not precised in the specification what should happen if a client sends a message on a topic he is subscribed to. For simplicity we choosed that he will recieve its own message in return as well.</p></li>
+<li><p>It is not precised in the specification what should happen if a client is subscribed to a specific topic <code>X</code> and the topic <code>*</code>, or if <code>X=*</code>. For simplicity, we choose he will recieve the message twice.</p></li>
+</ul>
+
+<h2 id="toc_12">Tests</h2>
+
+<p>We built our program using a test driven approach. Our program pass all 80 tests. Our tests cover the following parts of our code:</p>
+
+<div><pre><code class="language-none"> All 80 tests passed.
+Cover analysis: /Users/val/erlang/erlang-fun/starfish/broker/.eunit/index.html
+
+Code Coverage:
+micromq                       :  95%
+micromq_client_connect_tests  : 100%
+micromq_client_protocol_tests :  98%
+micromq_server_start_tests    : 100%
+
+Total                         : 97%</code></pre></div>
+
+<p>To allow a test to fail and close the server anyway, we used the following scheme, with start and stop taking care of the start-up and tear down.</p>
+
+<div><pre><code class="language-none">dumb_test_() -&gt;
+    {setup, 
+    fun start/0, 
+    fun stop/1, 
+    fun dumb_tests/1}.</code></pre></div>
+
+<p>With test function returning an array of tests.</p>
+
+<div><pre><code class="language-none">dumb_tests(_) -&gt;
+    [?_assertEqual(ok, ok)].</code></pre></div>
+
+<p>Our tests test the following aspects:</p>
+
+<ul>
+<li>start &amp; stop the server in <code>micromq_server_start_tests.erl</code></li>
+<li>connect &amp; disconnet the client in <code>micromq_client_connect_tests.erl</code></li>
+<li>test the protocol in <code>micromq_client_protocol_tests.erl</code>, including bad protocol usage and message framing.</li>
+</ul>
+
+<h2 id="toc_13">Technical considerations</h2>
+
+<h3 id="toc_14">Processes and function</h3>
+
+<ul>
+<li><strong>API</strong>: API calls returns immediately. The <code>start</code> functions call the start-link internal. The <code>stop</code> sends the stop message to the server.</li>
+<li><strong>Start-link internal</strong>: It is the internal start-up function and initializer of all shared internal structures. It <strong>spawns the server</strong> with the Network parameters and returns.</li>
+<li><strong>Server</strong>: The server is the top-supervisor process, it <strong>spawns the Acceptor</strong> with the Network parameters and then wait for an Erlang message to handles the tear-down (and kill the Acceptor).</li>
+<li><strong>Acceptor (Listener)</strong>: The Acceptor is an <strong>infinite loop</strong> that accepts new clients on a listening socket, until it is killed by the server. <strong>Each new client spawns its own worker</strong>, to be available for futher connecting clients </li>
+<li><strong>Worker</strong>: The worker instantiate data specific to the client and calls the looper. </li>
+<li><strong>Looper</strong>: The Looper is an <strong>infinite loop</strong> reading bytes on the client socket until it gets a complete message, calls the parser which will return the appropriate reply or a bad request message. The looper stops when the socket is closed, either by the client or the server.</li>
+</ul>
+
+<h3 id="toc_15">Data persistance</h3>
+
+<p>To persist data further than a process life and share data among processes, we used ETS tables (see <a href="http://erlang.org/doc/man/ets.html">Erlang doc</a> or see <a href="http://learnyousomeerlang.com/ets">LYSE</a>). We used them in 3 cases:</p>
+
+<ol>
+<li><p>For <strong>Client Records</strong> in <code>clients_by_records</code>:</p>
+
+<ul>
+<li>It stores the <em>current state</em> of the client (aka some statistics).</li>
+<li>It is public (all processes may retrieve or write/update data)</li>
+<li>It&#39;s a <code>set</code> (a client has a single record, any further write will overwrite previous records)</li>
+<li>The format expected is: <code>{ClientID, Socket, [TopicSubscribed], [TopicPublished], NbMsgReceived, NbMsgSent}</code> of types <code>{integer(), inet:socket(), [binary()], [binary()], integer(), integer()}</code> where names obviously denotes their function.</li>
+<li>A new record with default values is created when the connection is set up (when the listener get a new socket) and removed when the socket is closed by the client (when it&#39;s closed by the server every thing will be deleted anyway).</li>
+</ul></li>
+<li><p>For <strong>Client Subscriptions</strong> in <code>clients_by_topic</code>: </p>
+
+<ul>
+<li>It stores the subscription(s) of the client.</li>
+<li>It is public (all processes may retrieve or write/update data).</li>
+<li>It&#39;s a <code>bag</code> (a topic may obviously have many subscribers).</li>
+<li>The format expected is: <code>{Topic, ClientID}</code> of types <code>{binary(), integer()}</code> where names obviously denotes their function.</li>
+</ul></li>
+<li><p>For <strong>Custum Options</strong> in <code>options</code>:</p>
+
+<ul>
+<li>It stores some of the server configuration (Network and Limits).</li>
+<li>It is protected (only the launching process may edit it but all processes may access it).</li>
+<li>It is a <code>set</code> (a property may exist only once!)</li>
+<li>The format expected is: <code>{Property, Value}</code> of types <code>{atom(), term()}</code> where names obviously denotes their function.</li>
+<li>Upon start-up, it is constructed and filled with default values from the macros (<code>?MACRO</code>), in <code>create_options()</code>.</li>
+<li>Then, the custum start-up options overwrite the default entries in the <code>set</code>, in <code>handle_options()</code>.</li>
+</ul></li>
+</ol>
+
+<h3 id="toc_16">Message framing</h3>
+
+<p>According to the protocol, messages from clients are framed by double line-breaks (our implementation supports both <code>\n</code> and <code>\r\n</code></p>
+
+<p>The challenge is that <code>tcp</code> sends chunks of text that may contain:</p>
+
+<ul>
+<li>A partial frame</li>
+<li>One or more complete frame(s), often followed by a partial frame</li>
+</ul>
+
+<p>This is how we parse messages frames with tcp chunks:</p>
+
+<ol>
+<li>Read tcp chunk</li>
+<li>Find first occurrence of a double line break</li>
+<li>If an occurrence was found, extract frame until the line-break and remove it from the chunk</li>
+<li>If not, read another tcp chunk and concatenate it to the previous tcp chunk</li>
+<li>repeat from <code>2.</code> with the updated tcp chunk</li>
+</ol>
+
+<h3 id="toc_17">Bad protocol</h3>
+
+<p>The server should be designed not to crash when the client sends a message that doesn&#39;t follow the protocol&#39;s format. The specification does not tell how to respond to those messages. We choose to discard message that don&#39;t match the protocol in any case. To allow flexibility for this problem, we choose to have a macro parameters <code>?VERBOSITY</code> that may take values:</p>
+
+<ul>
+<li><code>none</code>: quietly discard message that don&#39;t match the protocol. </li>
+<li><code>minimal</code>: sends back a generic <code>400 Bad Request</code>.</li>
+<li><code>verbose</code>: sends back an error-specific message to the client, to let him know what happened. </li>
+</ul>
+
+
+</body>
+
+</html>

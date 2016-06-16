@@ -164,6 +164,43 @@ status_test_() ->
 	fun stop/1, 
 	fun tests_status/1}.
 
+
+		%% Test status
+%% ===================================================================
+tests_framing(Sockets) ->
+	[Socket|_] = Sockets,
+	%% partial frame
+	gen_tcp:send(Socket, <<"stat">>),
+	{Error, Reason} = receive_line(Socket),
+	
+	% ending the fram and partial next fram
+	gen_tcp:send(Socket, <<"us\n\nstat">>),
+	{ok, L1, R1} = receive_line(Socket),
+	[L2 | [L3 | [L4 | [L5|_]]]] = binary:split(R1, [<<"\n">>], [global]), 
+
+	% ending the 2nd frame and sending bullshit
+	gen_tcp:send(Socket, <<"us\n\nanything">>),
+	{ok, L6, R2} = receive_line(Socket),
+	[L7 | [L8 | [L9 | [L10|_]]]] = binary:split(R2, [<<"\n">>], [global]), 
+
+	[?_assertEqual(error, Error), ?_assertEqual(timeout, Reason),
+	?_assertEqual(<<"status for client 1:">>, L1),
+	?_assertEqual(<<"subscribed topics: ">>, L2),
+	?_assertEqual(<<"published topics: ">>, L3),
+	?_assertEqual(<<"received messages: 0">>, L4),
+	?_assertEqual(<<"sent messages: 0">>, L5),
+	?_assertEqual(<<"status for client 1:">>, L6),
+	?_assertEqual(<<"subscribed topics: ">>, L7),
+	?_assertEqual(<<"published topics: ">>, L8),
+	?_assertEqual(<<"received messages: 0">>, L9),
+	?_assertEqual(<<"sent messages: 0">>, L10)].
+
+framing_test_() ->
+	{setup, 
+	fun start1/0, 
+	fun stop/1, 
+	fun tests_framing/1}.
+
 %% Test subscribe (simple, wrong, and check it updates status)
 %% ===================================================================
 tests_subscribe(Sockets) ->

@@ -3,7 +3,7 @@
 
 Lab of MCS Modern Concurrent Systems class at HEIG-VD, Switzerland, 2016, with prof. [Marco Molteni](https://bitbucket.org/marco_m).
 
-Authors: [Mélanie Huck](https://github.com/melhk/), [Git repository](https://github.com/j-nolan/erlang-fun), [Valentin Minder](https://github.com/ValentinMinder), on our [git repository](https://github.com/j-nolan/erlang-fun).
+Authors: [Mélanie Huck](https://github.com/melhk/), [Jim Nolan](https://github.com/j-nolan/), [Valentin Minder](https://github.com/ValentinMinder), on our [git repository](https://github.com/j-nolan/erlang-fun).
 
 ## Usage
 ### Setup
@@ -34,6 +34,20 @@ With this method, whenever the sources are recompiled, the code is reloaded in t
 ## API
 ### `start_link`
 Spawns the server. The server in its turn spawn an acceptor process that will listen for new tcp connexions. Whenever a new client connects, the acceptor process spawns a worker process.
+
+It supports the following options:
+
+```
+micromq:start_link([
+{max_clients, 10000}, 
+{max_topics, 10000}, 
+{address, localhost}, 
+{port, 5017}
+{verbosity, verbose}
+])
+```
+
+Changing the port, the address and the verbosity works. However, max_clients and max_topics are not used.
 
 ### `stop`
 Retrieves the PID of the listener process and sends him a `stop` message.
@@ -88,12 +102,43 @@ body: <msg body>
 
 ## Tests
 
-We built our program using a test driven approach. Our program pass all XXX tests. Our tests cover the following parts of our code:
+We built our program using a test driven approach. Our program pass all 80 tests. Our tests cover the following parts of our code:
 
 ```
+ All 80 tests passed.
+Cover analysis: /Users/val/erlang/erlang-fun/starfish/broker/.eunit/index.html
+
 Code Coverage:
-TODO
+micromq                       :  95%
+micromq_client_connect_tests  : 100%
+micromq_client_protocol_tests :  98%
+micromq_server_start_tests    : 100%
+
+Total                         : 97%
 ```
+
+To allow a test to fail and close the server anyway, we used the following scheme, with start and stop taking care of the start-up and tear down.
+
+```
+dumb_test_() ->
+	{setup, 
+	fun start/0, 
+	fun stop/1, 
+	fun dumb_tests/1}.
+```
+
+With test function returning an array of tests.
+
+```
+dumb_tests(_) ->
+	[?_assertEqual(ok, ok)].
+```
+
+Our tests test the following aspects:
+
+- start & stop the server in `micromq_server_start_tests.erl`
+- connect & disconnet the client in `micromq_client_connect_tests.erl`
+- test the protocol in `micromq_client_protocol_tests.erl`, including bad protocol usage and message framing.
 
 ## Technical considerations
 
